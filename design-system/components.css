@@ -1778,3 +1778,63 @@
 .stagger-children > *:nth-child(6)  { animation-delay: 250ms; }
 .stagger-children > *:nth-child(7)  { animation-delay: 300ms; }
 .stagger-children > *:nth-child(8)  { animation-delay: 350ms; }
+
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE RESPONSIVE
+═══════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+
+  /* Hide topbar search — too wide for mobile topbar */
+  .topbar-search { display: none; }
+
+  /* Topbar breadcrumb: truncate if long */
+  .topbar-breadcrumb {
+    overflow: hidden;
+    min-width: 0;
+    flex: 1;
+  }
+  .topbar-breadcrumb__item,
+  .topbar-breadcrumb__sep {
+    display: none;
+  }
+  .topbar-breadcrumb__current {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Topbar actions: only show notification + avatar, hide extras */
+  .topbar-actions {
+    flex-shrink: 0;
+    gap: var(--space-2);
+  }
+
+  /* Stat cards: ensure text doesn't overflow */
+  .stat-card { min-width: 0; }
+
+  /* Filter bar: wrap on mobile */
+  .filter-bar {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .filter-bar .filter-group {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+
+  /* Tab bar: scroll horizontally */
+  .tab-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  /* Modals: full width on mobile */
+  .modal-box {
+    width: calc(100vw - var(--space-8));
+    max-width: 100%;
+  }
+}
