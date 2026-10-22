@@ -1814,14 +1814,22 @@
   /* Stat cards: ensure text doesn't overflow */
   .stat-card { min-width: 0; }
 
-  /* Filter bar: wrap on mobile */
+  /* Filter bar: stack vertically on mobile */
   .filter-bar {
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
     gap: var(--space-3);
   }
-  .filter-bar .filter-group {
+  .filter-bar__search {
+    max-width: 100%;
+  }
+  .filter-bar__filters {
     flex-wrap: wrap;
     gap: var(--space-2);
+  }
+  .filter-select {
+    flex: 1;
+    min-width: 120px;
   }
 
   /* Tab bar: scroll horizontally */
@@ -1829,8 +1837,24 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    flex-wrap: nowrap;
   }
   .tab-bar::-webkit-scrollbar { display: none; }
+  .tab-item {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  /* Filter bar: date input takes full row, selects share next row */
+  .filter-bar__filters input[type="date"] {
+    flex-basis: 100%;
+    width: 100% !important;
+  }
+  .filter-bar__filters .form-input,
+  .filter-bar__filters .form-select {
+    flex: 1;
+    min-width: 100px;
+  }
 
   /* Modals: full width on mobile */
   .modal-box {

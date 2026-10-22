@@ -14,6 +14,7 @@ body {
   background-color: var(--color-bg-base);
   line-height: var(--leading-normal);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 a { color: inherit; text-decoration: none; }
@@ -363,9 +364,11 @@ input, textarea, select { font-family: inherit; }
 /* ─── Mobile responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
 
-  /* Sidebar off-screen; main takes full width */
+  /* Sidebar off-screen; main takes full width, no horizontal overflow */
   .app-main {
     margin-left: 0 !important;
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
   /* Content padding tighter */
