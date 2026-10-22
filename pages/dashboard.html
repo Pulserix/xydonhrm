@@ -184,6 +184,8 @@
       [style*="grid-template-columns: repeat(4"] { grid-template-columns: repeat(2, 1fr) !important; }
       [style*="grid-template-columns: 1fr 340px"] { grid-template-columns: 1fr !important; }
       [style*="grid-template-columns: 1fr 1fr 1fr"] { grid-template-columns: 1fr !important; }
+      /* Hide approve/reject buttons on mobile to prevent overflow */
+      .approval-item__actions { display: none; }
     }
     @media (max-width: 480px) {
       [style*="grid-template-columns: repeat(4"] { grid-template-columns: 1fr !important; }
