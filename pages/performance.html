@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — Performance Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Goal progress */
+    .goal-bar-track {
+      height: 5px;
+      background: var(--color-bg-overlay-2);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: var(--space-2);
+    }
+    .goal-bar-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: var(--radius-full);
+      transition: width 0.6s var(--ease-out);
+    }
+
+    /* Rating stars */
+    .rating-stars { display: flex; gap: 2px; }
+    .star { color: var(--color-bg-overlay-2); font-size: 13px; }
+    .star.filled { color: var(--color-warning); }
+
+    /* Review card */
+    .review-card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+      cursor: pointer;
+      transition: border-color var(--duration-fast), background var(--duration-fast);
+    }
+    .review-card:hover { border-color: var(--color-border-strong); background: var(--color-bg-overlay); }
+
+    /* Cycle status indicator */
+    .cycle-phase {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-5);
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+    .cycle-phase.active { background: var(--color-accent-soft); border-color: var(--color-accent); color: var(--color-accent); }
+
+    /* Mobile */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: calc(var(--z-modal) - 1);
+      backdrop-filter: blur(2px);
+    }
+    .mobile-overlay.active { display: block; }
+    .mobile-menu-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .app-sidebar {
+        transform: translateX(-100%);
+        transition: transform var(--duration-slow) var(--ease-out), width var(--duration-slow) var(--ease-out);
+        z-index: var(--z-modal);
+      }
+      .app-sidebar.mobile-open { transform: translateX(0); }
+      .app-sidebar.collapsed { width: var(--sidebar-width); }
+      .app-main { margin-left: 0 !important; }
+      .mobile-menu-btn { display: flex; }
+      .topbar-search { display: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+      .page-header { flex-wrap: wrap; }
+      .page-header__actions { width: 100%; }
+      .phase-row { flex-wrap: wrap; }
+    }
+    @media (max-width: 480px) {
+      .app-content { padding: var(--space-5); }
+      .stats-row { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileSidebar()"></div>
+<div class="app-shell">
+
+  <!-- ─── Sidebar ──────────────────────────────────────────── -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__logo">H</div>
+      <span class="sidebar-brand__name">PeopleOS</span>
+      <span class="sidebar-brand__badge">HRMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Main</div>
+        <a class="nav-item" href="dashboard.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="nav-item__label">Dashboard</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Workforce</div>
+        <a class="nav-item" href="employees.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="nav-item__label">Employees</span>
+        </a>
+        <a class="nav-item" href="attendance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="nav-item__label">Attendance</span>
+        </a>
+        <a class="nav-item" href="leave.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="nav-item__label">Leave</span>
+        </a>
+        <a class="nav-item active" href="performance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>
+          <span class="nav-item__label">Performance</span>
+        </a>
+        <a class="nav-item" href="training.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span class="nav-item__label">Training</span>
+        </a>
+        <a class="nav-item" href="engagement.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="nav-item__label">Engagement</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Hiring</div>
+        <a class="nav-item" href="recruitment.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          <span class="nav-item__label">Recruitment</span>
+        </a>
+        <a class="nav-item" href="onboarding.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span class="nav-item__label">Onboarding</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Finance</div>
+        <a class="nav-item" href="payroll.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="nav-item__label">Payroll</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">HR Ops</div>
+        <a class="nav-item" href="assets.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <span class="nav-item__label">Assets</span>
+        </a>
+        <a class="nav-item" href="promotions.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg>
+          <span class="nav-item__label">Promotions</span>
+        </a>
+        <a class="nav-item" href="disciplinary.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="nav-item__label">Disciplinary</span>
+        </a>
+        <a class="nav-item" href="helpdesk.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="nav-item__label">Helpdesk</span>
+        </a>
+        <a class="nav-item" href="compliance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span class="nav-item__label">Compliance</span>
+        </a>
+        <a class="nav-item" href="offboarding.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span class="nav-item__label">Offboarding</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Config</div>
+        <a class="nav-item" href="analytics.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="nav-item__label">Analytics</span>
+        </a>
+        <a class="nav-item" href="settings.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M12 2a10 10 0 0 1 0 20"/></svg>
+          <span class="nav-item__label">Settings</span>
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer__avatar">RJ</div>
+      <div class="sidebar-footer__info">
+        <div class="sidebar-footer__name">Rajat Joshi</div>
+        <div class="sidebar-footer__role">HR Manager</div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─── Main ─────────────────────────────────────────────── -->
+  <div class="app-main">
+
+    <header class="app-topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-breadcrumb">
+        <a href="dashboard.html" class="topbar-breadcrumb__item">PeopleOS</a>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__current">Performance Management</span>
+      </div>
+      <div class="topbar-search">
+        <span class="topbar-search__icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" placeholder="Search employees…">
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-action-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot"></span>
+        </button>
+      </div>
+    </header>
+
+    <div class="app-content">
+
+      <div class="page-header">
+        <div class="page-header__text">
+          <h1>Performance Management</h1>
+          <p>Manage review cycles, goals, and appraisals across the organisation.</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="btn btn-secondary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openCycleModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Review Cycle
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Active Cycles</div>
+            <div class="stat-card__icon" style="background: var(--color-accent-soft); color: var(--color-accent);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">2</div>
+          <div class="stat-card__trend neutral">Q3 & Annual Cycle</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Goals Submitted</div>
+            <div class="stat-card__icon" style="background: var(--color-success-soft); color: var(--color-success);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">68%</div>
+          <div class="stat-card__trend neutral">193 of 284 employees</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Pending Reviews</div>
+            <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">14</div>
+          <div class="stat-card__trend neutral">Due in 7 days</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Avg Rating</div>
+            <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">3.8<span style="font-size: var(--text-lg); color: var(--color-text-muted); font-weight: 400;">/5</span></div>
+          <div class="stat-card__trend neutral">Last completed cycle</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'cycles')">Review Cycles</div>
+        <div class="tab" onclick="switchTab(this,'goals')">Goals <span class="tab__count">193</span></div>
+        <div class="tab" onclick="switchTab(this,'reviews')">Pending Reviews <span class="tab__count">14</span></div>
+        <div class="tab" onclick="switchTab(this,'team')">Team View</div>
+        <div class="tab" onclick="switchTab(this,'pip')">Improvement Plans</div>
+      </div>
+
+      <!-- Tab: Cycles -->
+      <div id="tab-cycles" class="tab-content active">
+        <!-- Cycle phase indicator -->
+        <div class="phase-row" style="display: flex; gap: var(--space-3); margin-bottom: var(--space-6); flex-wrap: wrap;">
+          <div class="cycle-phase active">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Goal Setting
+          </div>
+          <div class="cycle-phase">Self-Appraisal</div>
+          <div class="cycle-phase">Manager Review</div>
+          <div class="cycle-phase">Calibration</div>
+          <div class="cycle-phase">Finalized</div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Cycle Name</th>
+                <th>Period</th>
+                <th>Phase</th>
+                <th>Participants</th>
+                <th>Submissions</th>
+                <th>Deadline</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div style="font-weight: var(--weight-semibold); font-size: var(--text-sm);">Annual Appraisal 2026</div>
+                  <div style="font-size: var(--text-xs); color: var(--color-text-muted);">All departments</div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Jan – Dec 2026</td>
+                <td><span class="badge badge-accent no-dot">Goal Setting</span></td>
+                <td class="muted">284</td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 80px;"><div class="goal-bar-fill" style="width: 68%;"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-text-muted);">68%</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 31, 2026</td>
+                <td>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-secondary btn-sm">View</button>
+                    <button class="btn btn-ghost btn-sm">Nudge</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight: var(--weight-semibold); font-size: var(--text-sm);">Q3 Quarterly Check-In</div>
+                  <div style="font-size: var(--text-xs); color: var(--color-text-muted);">Engineering · Sales</div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Jul – Sep 2026</td>
+                <td><span class="badge badge-warning no-dot">Manager Review</span></td>
+                <td class="muted">112</td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 80px;"><div class="goal-bar-fill" style="width: 91%; background: var(--color-success);"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-text-muted);">91%</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 22, 2026</td>
+                <td>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-primary btn-sm">Review</button>
+                    <button class="btn btn-ghost btn-sm">Export</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div style="font-weight: var(--weight-semibold); font-size: var(--text-sm);">Mid-Year Review 2026</div>
+                  <div style="font-size: var(--text-xs); color: var(--color-text-muted);">All departments</div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Jan – Jun 2026</td>
+                <td><span class="badge badge-success no-dot">Finalized</span></td>
+                <td class="muted">284</td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 80px;"><div class="goal-bar-fill" style="width: 100%; background: var(--color-success);"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-success-text);">100%</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Jun 30, 2026</td>
+                <td>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-ghost btn-sm">View Report</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Goals -->
+      <div id="tab-goals" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-bar__search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search employee or goal…">
+          </div>
+          <div class="filter-bar__filters">
+            <select class="filter-select">
+              <option>All Departments</option>
+              <option>Engineering</option>
+              <option>Sales</option>
+              <option>Operations</option>
+            </select>
+            <select class="filter-select">
+              <option>All Status</option>
+              <option>Not Started</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+            </select>
+            <select class="filter-select">
+              <option>Annual 2026</option>
+              <option>Q3 2026</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Goal</th>
+                <th>Category</th>
+                <th>Progress</th>
+                <th>Weight</th>
+                <th>Due</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">PK</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Priya Kumar</div>
+                      <div class="table-user__meta">Operations</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="max-width: 200px;">
+                  <div style="font-size: var(--text-sm);">Reduce processing time by 20%</div>
+                </td>
+                <td><span class="badge badge-accent no-dot">Operational</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 100px;"><div class="goal-bar-fill" style="width: 75%;"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-text-muted);">75%</span>
+                  </div>
+                </td>
+                <td class="muted">30%</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Dec 31, 2026</td>
+                <td><button class="btn btn-ghost btn-sm">Edit</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Amit Verma</div>
+                      <div class="table-user__meta">Sales</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="max-width: 200px;">
+                  <div style="font-size: var(--text-sm);">Achieve ₹1.2Cr quarterly target</div>
+                </td>
+                <td><span class="badge badge-success no-dot">Revenue</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 100px;"><div class="goal-bar-fill" style="width: 92%; background: var(--color-success);"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-success-text);">92%</span>
+                  </div>
+                </td>
+                <td class="muted">50%</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Sep 30, 2026</td>
+                <td><button class="btn btn-ghost btn-sm">Edit</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Rohan Gupta</div>
+                      <div class="table-user__meta">Engineering</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="max-width: 200px;">
+                  <div style="font-size: var(--text-sm);">Complete 3 product features in sprint</div>
+                </td>
+                <td><span class="badge badge-neutral no-dot">Delivery</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 100px;"><div class="goal-bar-fill" style="width: 33%;"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-text-muted);">33%</span>
+                  </div>
+                </td>
+                <td class="muted">40%</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Dec 31, 2026</td>
+                <td><button class="btn btn-ghost btn-sm">Edit</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">KN</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Kavya Nair</div>
+                      <div class="table-user__meta">Sales</div>
+                    </div>
+                  </div>
+                </td>
+                <td style="max-width: 200px;">
+                  <div style="font-size: var(--text-sm);">Onboard 10 new enterprise clients</div>
+                </td>
+                <td><span class="badge badge-success no-dot">Revenue</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 100px;"><div class="goal-bar-fill" style="width: 60%; background: var(--color-warning);"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-warning-text);">60%</span>
+                  </div>
+                </td>
+                <td class="muted">50%</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Dec 31, 2026</td>
+                <td><button class="btn btn-ghost btn-sm">Edit</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="pagination">
+            <span class="pagination__info">Showing 1–4 of 193 goals</span>
+            <div class="pagination__controls">
+              <button class="page-btn" disabled><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg></button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Reviews -->
+      <div id="tab-reviews" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-bar__filters">
+            <select class="filter-select">
+              <option>All Cycles</option>
+              <option>Q3 2026</option>
+              <option>Annual 2026</option>
+            </select>
+            <select class="filter-select">
+              <option>All Types</option>
+              <option>Self-Appraisal</option>
+              <option>Manager Review</option>
+            </select>
+          </div>
+          <div style="margin-left: auto; font-size: var(--text-xs); color: var(--color-text-muted);">14 pending reviews</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+          <div class="review-card" onclick="showToast('Opening review form…', 'info')">
+            <div class="avatar">AV</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold);">Amit Verma</div>
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">Sales Executive · Q3 2026 Check-In</div>
+            </div>
+            <span class="badge badge-warning no-dot">Manager Review</span>
+            <div style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">Due Oct 22</div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showToast('Opening review…', 'info')">Start Review</button>
+          </div>
+
+          <div class="review-card" onclick="showToast('Opening review form…', 'info')">
+            <div class="avatar" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold);">Rohan Gupta</div>
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">Software Engineer · Q3 2026 Check-In</div>
+            </div>
+            <span class="badge badge-warning no-dot">Manager Review</span>
+            <div style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">Due Oct 22</div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showToast('Opening review…', 'info')">Start Review</button>
+          </div>
+
+          <div class="review-card" onclick="showToast('Opening review form…', 'info')">
+            <div class="avatar" style="background: var(--color-success-soft); color: var(--color-success-text);">NS</div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: var(--text-sm); font-weight: var(--weight-semibold);">Neha Singh</div>
+              <div style="font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 2px;">Product Manager · Annual 2026</div>
+            </div>
+            <span class="badge badge-danger no-dot">Overdue</span>
+            <div style="font-size: var(--text-xs); color: var(--color-danger-text); flex-shrink: 0;">2 days overdue</div>
+            <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showToast('Opening review…', 'info')">Start Review</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Team -->
+      <div id="tab-team" class="tab-content">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Cycle</th>
+                <th>Goals Set</th>
+                <th>Self-Appraisal</th>
+                <th>Manager Review</th>
+                <th>Final Rating</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">PK</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Priya Kumar</div>
+                      <div class="table-user__meta">Operations</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted">Annual 2026</td>
+                <td><span class="badge badge-success no-dot">Submitted</span></td>
+                <td><span class="badge badge-success no-dot">Done</span></td>
+                <td><span class="badge badge-warning no-dot">Pending</span></td>
+                <td class="muted">—</td>
+                <td><button class="btn btn-secondary btn-sm">Review</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Amit Verma</div>
+                      <div class="table-user__meta">Sales</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted">Q3 2026</td>
+                <td><span class="badge badge-success no-dot">Submitted</span></td>
+                <td><span class="badge badge-success no-dot">Done</span></td>
+                <td><span class="badge badge-danger no-dot">Overdue</span></td>
+                <td class="muted">—</td>
+                <td><button class="btn btn-primary btn-sm">Review Now</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Rohan Gupta</div>
+                      <div class="table-user__meta">Engineering</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted">Q3 2026</td>
+                <td><span class="badge badge-success no-dot">Submitted</span></td>
+                <td><span class="badge badge-neutral no-dot">Not Started</span></td>
+                <td><span class="badge badge-neutral no-dot">Waiting</span></td>
+                <td class="muted">—</td>
+                <td><button class="btn btn-ghost btn-sm">Nudge</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">KN</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Kavya Nair</div>
+                      <div class="table-user__meta">Sales</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted">Annual 2026</td>
+                <td><span class="badge badge-success no-dot">Submitted</span></td>
+                <td><span class="badge badge-success no-dot">Done</span></td>
+                <td><span class="badge badge-success no-dot">Done</span></td>
+                <td>
+                  <div class="rating-stars">
+                    <span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span>
+                  </div>
+                </td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: PIP -->
+      <div id="tab-pip" class="tab-content">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: var(--space-5);">
+          <button class="btn btn-primary btn-sm" onclick="showToast('Opening PIP form…', 'info')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create PIP
+          </button>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>PIP Period</th>
+                <th>Issue Area</th>
+                <th>Status</th>
+                <th>Progress Review</th>
+                <th>End Date</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-danger-soft); color: var(--color-danger-text);">MS</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Manish Sharma</div>
+                      <div class="table-user__meta">Engineering</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Sep – Nov 2026</td>
+                <td class="muted">Code quality &amp; delivery</td>
+                <td><span class="badge badge-warning no-dot">Active</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 80px;"><div class="goal-bar-fill" style="width: 50%; background: var(--color-warning);"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-text-muted);">2/4 checks</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 30, 2026</td>
+                <td><button class="btn btn-secondary btn-sm">Update</button></td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">DP</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Deepa Pillai</div>
+                      <div class="table-user__meta">Operations</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Jun – Aug 2026</td>
+                <td class="muted">Attendance &amp; punctuality</td>
+                <td><span class="badge badge-success no-dot">Resolved</span></td>
+                <td>
+                  <div style="display: flex; align-items: center; gap: var(--space-3);">
+                    <div class="goal-bar-track" style="width: 80px;"><div class="goal-bar-fill" style="width: 100%; background: var(--color-success);"></div></div>
+                    <span style="font-size: var(--text-xs); color: var(--color-success-text);">4/4 checks</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Aug 31, 2026</td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- New Review Cycle Modal -->
+<div class="modal-overlay" id="cycle-modal" style="display:none" onclick="closeCycleModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-header__title">Create Review Cycle</div>
+        <div class="modal-header__desc">Set up a new performance review cycle</div>
+      </div>
+      <button class="modal-close" onclick="closeCycleModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        <div class="form-group">
+          <label class="form-label required">Cycle Name</label>
+          <input type="text" class="input" placeholder="e.g. Annual Appraisal 2027">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+          <div class="form-group">
+            <label class="form-label required">Start Date</label>
+            <input type="date" class="input" value="2027-01-01">
+          </div>
+          <div class="form-group">
+            <label class="form-label required">End Date</label>
+            <input type="date" class="input" value="2027-12-31">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Participants</label>
+          <select class="select">
+            <option>All Employees</option>
+            <option>Engineering</option>
+            <option>Sales</option>
+            <option>Operations</option>
+            <option>Custom Selection</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Review Type</label>
+          <select class="select">
+            <option>Annual Appraisal</option>
+            <option>Mid-Year Review</option>
+            <option>Quarterly Check-In</option>
+            <option>Probation Review</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Goal Submission Deadline</label>
+          <input type="date" class="input" value="2027-01-31">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCycleModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="createCycle()">Create Cycle</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="../theme.js"></script>
+<script>
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+  function toggleMobileSidebar() {
+    document.getElementById('sidebar').classList.toggle('mobile-open');
+    document.getElementById('mobile-overlay').classList.toggle('active');
+  }
+  function openCycleModal() { document.getElementById('cycle-modal').style.display = 'flex'; }
+  function closeCycleModal(e) {
+    if (!e || e.target === document.getElementById('cycle-modal')) {
+      document.getElementById('cycle-modal').style.display = 'none';
+    }
+  }
+  function createCycle() {
+    document.getElementById('cycle-modal').style.display = 'none';
+    showToast('Review cycle created successfully', 'success');
+  }
+  function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast__dot"></div><span class="toast__message">${message}</span><button class="toast__close" onclick="this.parentElement.remove()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCycleModal(); });
+</script>
+</body>
+</html>

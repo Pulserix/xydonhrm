@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — Leave Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Calendar */
+    .calendar {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .calendar-header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--color-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .calendar-header__title {
+      font-size: var(--text-md);
+      font-weight: var(--weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .calendar-nav {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar-day-name {
+      padding: var(--space-4) var(--space-2);
+      text-align: center;
+      font-size: var(--text-xs);
+      font-weight: var(--weight-semibold);
+      color: var(--color-text-muted);
+      letter-spacing: var(--tracking-wider);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .calendar-day {
+      padding: var(--space-3);
+      min-height: 72px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      border-right: 1px solid var(--color-border-subtle);
+      transition: background var(--duration-fast);
+      cursor: pointer;
+      position: relative;
+    }
+
+    .calendar-day:hover { background: var(--color-bg-elevated); }
+
+    .calendar-day.other-month .calendar-day__num {
+      color: var(--color-text-muted);
+      opacity: 0.4;
+    }
+
+    .calendar-day.today .calendar-day__num {
+      background: var(--color-accent);
+      color: var(--color-text-on-accent);
+      border-radius: var(--radius-full);
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-day__num {
+      font-size: var(--text-xs);
+      font-weight: var(--weight-medium);
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-event {
+      font-size: 9px;
+      font-weight: var(--weight-semibold);
+      padding: 2px 5px;
+      border-radius: 3px;
+      margin-bottom: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .calendar-event.annual { background: var(--color-accent-soft); color: var(--color-accent); }
+    .calendar-event.sick { background: var(--color-danger-soft); color: var(--color-danger-text); }
+    .calendar-event.casual { background: var(--color-success-soft); color: var(--color-success-text); }
+    .calendar-event.holiday { background: var(--color-warning-soft); color: var(--color-warning-text); }
+
+    .weekend { background: rgba(255,255,255,0.01); }
+
+    /* Leave policy card */
+    .policy-card {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+    }
+
+    .policy-card__icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .policy-card__title {
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      color: var(--color-text-primary);
+    }
+
+    .policy-card__desc {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2);
+      line-height: 1.6;
+    }
+
+    /* Mobile responsive */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+    }
+    .mobile-overlay.active { display: block; }
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      padding: 4px;
+      margin-right: var(--space-3);
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .app-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+      }
+      .app-sidebar.mobile-open { transform: translateX(0); }
+      .mobile-menu-btn { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileSidebar()"></div>
+
+<div class="app-shell">
+
+  <!-- ─── Sidebar ──────────────────────────────────────────── -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__logo">H</div>
+      <span class="sidebar-brand__name">PeopleOS</span>
+      <span class="sidebar-brand__badge">HRMS</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Main</div>
+        <a class="nav-item" href="dashboard.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="nav-item__label">Dashboard</span>
+        </a>
+      </div>
+
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Workforce</div>
+        <a class="nav-item" href="employees.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="nav-item__label">Employees</span>
+        </a>
+        <a class="nav-item" href="attendance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="nav-item__label">Attendance</span>
+        </a>
+        <a class="nav-item active" href="leave.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="nav-item__label">Leave</span>
+          <span class="nav-item__badge">8</span>
+        </a>
+        <a class="nav-item" href="performance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="nav-item__label">Performance</span>
+        </a>
+        <a class="nav-item" href="training.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span class="nav-item__label">Training</span>
+        </a>
+        <a class="nav-item" href="engagement.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="nav-item__label">Engagement</span>
+        </a>
+      </div>
+
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Hiring</div>
+        <a class="nav-item" href="recruitment.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          <span class="nav-item__label">Recruitment</span>
+          <span class="nav-item__badge">3</span>
+        </a>
+        <a class="nav-item" href="onboarding.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span class="nav-item__label">Onboarding</span>
+        </a>
+      </div>
+
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Finance</div>
+        <a class="nav-item" href="payroll.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="nav-item__label">Payroll</span>
+        </a>
+      </div>
+
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">HR Ops</div>
+        <a class="nav-item" href="assets.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span class="nav-item__label">Assets</span>
+        </a>
+        <a class="nav-item" href="promotions.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="3" y1="17" x2="15" y2="17"/></svg>
+          <span class="nav-item__label">Promotions</span>
+        </a>
+        <a class="nav-item" href="disciplinary.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="nav-item__label">Disciplinary</span>
+        </a>
+        <a class="nav-item" href="helpdesk.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="nav-item__label">Helpdesk</span>
+        </a>
+        <a class="nav-item" href="compliance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="nav-item__label">Compliance</span>
+        </a>
+        <a class="nav-item" href="offboarding.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span class="nav-item__label">Offboarding</span>
+        </a>
+      </div>
+
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Config</div>
+        <a class="nav-item" href="analytics.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="nav-item__label">Analytics</span>
+        </a>
+        <a class="nav-item" href="settings.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M12 2a10 10 0 0 1 0 20"/></svg>
+          <span class="nav-item__label">Settings</span>
+        </a>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="sidebar-footer__avatar">RJ</div>
+      <div class="sidebar-footer__info">
+        <div class="sidebar-footer__name">Rajat Joshi</div>
+        <div class="sidebar-footer__role">HR Manager</div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ─── Main ─────────────────────────────────────────────── -->
+  <div class="app-main">
+
+    <!-- Topbar -->
+    <header class="app-topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-breadcrumb">
+        <a href="dashboard.html" class="topbar-breadcrumb__item">PeopleOS</a>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__current">Leave Management</span>
+      </div>
+
+      <div class="topbar-search">
+        <span class="topbar-search__icon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </span>
+        <input type="text" placeholder="Search employees…">
+      </div>
+
+      <div class="topbar-actions">
+        <button class="topbar-action-btn">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-dot"></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="app-content">
+
+      <!-- Page header -->
+      <div class="page-header">
+        <div class="page-header__text">
+          <h1>Leave Management</h1>
+          <p>Manage team leave requests, balances, and the holiday calendar.</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="btn btn-secondary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openLeaveModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Apply Leave
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary stat cards -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); margin-bottom: var(--space-8);" class="stagger-children">
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Pending Requests</div>
+            <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">8</div>
+          <div class="stat-card__trend neutral">Awaiting your action</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">On Leave Today</div>
+            <div class="stat-card__icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">22</div>
+          <div class="stat-card__trend neutral">7 returning tomorrow</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Approved This Month</div>
+            <div class="stat-card__icon" style="background: var(--color-success-soft); color: var(--color-success);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">41</div>
+          <div class="stat-card__trend neutral">+12% vs last month</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Upcoming Holidays</div>
+            <div class="stat-card__icon" style="background: var(--color-info-soft); color: var(--color-info);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">3</div>
+          <div class="stat-card__trend neutral">Next: Diwali (Nov 1)</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this, 'requests')">
+          Pending Requests
+          <span class="tab__count">8</span>
+        </div>
+        <div class="tab" onclick="switchTab(this, 'balances')">Balances</div>
+        <div class="tab" onclick="switchTab(this, 'calendar')">Calendar</div>
+        <div class="tab" onclick="switchTab(this, 'policy')">Policy</div>
+      </div>
+
+      <!-- Tab: Pending Requests -->
+      <div id="tab-requests" class="tab-content active">
+        <div class="filter-bar">
+          <div class="filter-bar__filters">
+            <select class="filter-select">
+              <option>All Leave Types</option>
+              <option>Annual</option>
+              <option>Sick</option>
+              <option>Casual</option>
+              <option>Comp Off</option>
+            </select>
+            <select class="filter-select">
+              <option>All Departments</option>
+              <option>Engineering</option>
+              <option>Sales</option>
+              <option>Operations</option>
+            </select>
+          </div>
+          <div style="margin-left: auto; font-size: var(--text-xs); color: var(--color-text-muted);">
+            Showing 8 pending requests
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Leave Type</th>
+                <th>Duration</th>
+                <th>Days</th>
+                <th>Reason</th>
+                <th>Applied</th>
+                <th>Balance</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">PK</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Priya Kumar</div>
+                      <div class="table-user__meta">Operations</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge badge-accent no-dot">Annual</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 5 – Nov 6</td>
+                <td class="muted">2 days</td>
+                <td class="muted" style="max-width: 160px;">
+                  <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block;">Personal travel</span>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">3h ago</td>
+                <td>
+                  <span style="font-size: var(--text-xs); color: var(--color-success-text); font-weight: 600;">11 left</span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-success btn-sm" onclick="approveLeave(this)">Approve</button>
+                    <button class="btn btn-ghost btn-sm" onclick="rejectLeave(this)">Reject</button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Amit Verma</div>
+                      <div class="table-user__meta">Sales</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge badge-danger no-dot">Sick</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 23 – Oct 24</td>
+                <td class="muted">2 days</td>
+                <td class="muted">Medical appointment</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">5h ago</td>
+                <td>
+                  <span style="font-size: var(--text-xs); color: var(--color-warning-text); font-weight: 600;">2 left</span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-success btn-sm" onclick="approveLeave(this)">Approve</button>
+                    <button class="btn btn-ghost btn-sm" onclick="rejectLeave(this)">Reject</button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Rohan Gupta</div>
+                      <div class="table-user__meta">Engineering</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge badge-success no-dot">Casual</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 28</td>
+                <td class="muted">1 day</td>
+                <td class="muted">Family event</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">1d ago</td>
+                <td>
+                  <span style="font-size: var(--text-xs); color: var(--color-success-text); font-weight: 600;">4 left</span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-success btn-sm" onclick="approveLeave(this)">Approve</button>
+                    <button class="btn btn-ghost btn-sm" onclick="rejectLeave(this)">Reject</button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr>
+                <td>
+                  <div class="table-user">
+                    <div class="avatar avatar-sm">KN</div>
+                    <div class="table-user__info">
+                      <div class="table-user__name">Kavya Nair</div>
+                      <div class="table-user__meta">Sales</div>
+                    </div>
+                  </div>
+                </td>
+                <td><span class="badge badge-accent no-dot">Annual</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 1 – Nov 5</td>
+                <td class="muted">4 days</td>
+                <td class="muted">Diwali holiday</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">2d ago</td>
+                <td>
+                  <span style="font-size: var(--text-xs); color: var(--color-success-text); font-weight: 600;">18 left</span>
+                </td>
+                <td>
+                  <div style="display: flex; gap: 6px;">
+                    <button class="btn btn-success btn-sm" onclick="approveLeave(this)">Approve</button>
+                    <button class="btn btn-ghost btn-sm" onclick="rejectLeave(this)">Reject</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="pagination">
+            <span class="pagination__info">Showing 1–4 of 8 pending requests</span>
+            <div class="pagination__controls">
+              <button class="page-btn" disabled>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button class="page-btn active">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Balances -->
+      <div id="tab-balances" class="tab-content">
+        <div style="margin-bottom: var(--space-6); display: flex; align-items: center; gap: var(--space-4);">
+          <select class="filter-select">
+            <option>All Employees</option>
+            <option>Engineering</option>
+            <option>Sales</option>
+          </select>
+          <select class="filter-select">
+            <option>FY 2026–27</option>
+            <option>FY 2025–26</option>
+          </select>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-7);">
+
+          <!-- Employee balance card -->
+          <div class="card">
+            <div class="card-header">
+              <div style="display: flex; align-items: center; gap: var(--space-4);">
+                <div class="avatar">PK</div>
+                <div>
+                  <div class="card-header__title">Priya Kumar</div>
+                  <div style="font-size: var(--text-xs); color: var(--color-text-muted);">Senior Manager · Operations</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5);">
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Annual Leave</span>
+                  <span class="badge badge-accent no-dot">EL</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 55%;"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used">11</span>
+                  <span class="leave-balance-card__total">/ 20 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">9 remaining</div>
+              </div>
+
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Sick Leave</span>
+                  <span class="badge badge-danger no-dot">SL</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 33%; background: var(--color-danger);"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used" style="color: var(--color-danger-text);">2</span>
+                  <span class="leave-balance-card__total">/ 6 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">4 remaining</div>
+              </div>
+
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Casual Leave</span>
+                  <span class="badge badge-success no-dot">CL</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 25%; background: var(--color-success);"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used" style="color: var(--color-success-text);">1</span>
+                  <span class="leave-balance-card__total">/ 4 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">3 remaining</div>
+              </div>
+
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Comp Off</span>
+                  <span class="badge badge-neutral no-dot">CO</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 0%;"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used" style="color: var(--color-text-muted);">0</span>
+                  <span class="leave-balance-card__total">/ 0 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">None accrued</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Second employee -->
+          <div class="card">
+            <div class="card-header">
+              <div style="display: flex; align-items: center; gap: var(--space-4);">
+                <div class="avatar" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div>
+                <div>
+                  <div class="card-header__title">Amit Verma</div>
+                  <div style="font-size: var(--text-xs); color: var(--color-text-muted);">Executive · Sales</div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body" style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5);">
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Annual Leave</span>
+                  <span class="badge badge-accent no-dot">EL</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 90%;"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used">18</span>
+                  <span class="leave-balance-card__total">/ 20 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-warning-text);">2 remaining</div>
+              </div>
+
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Sick Leave</span>
+                  <span class="badge badge-danger no-dot">SL</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 66%; background: var(--color-warning);"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used" style="color: var(--color-warning-text);">4</span>
+                  <span class="leave-balance-card__total">/ 6 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">2 remaining</div>
+              </div>
+
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Casual Leave</span>
+                  <span class="badge badge-success no-dot">CL</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 100%; background: var(--color-danger);"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used" style="color: var(--color-danger-text);">4</span>
+                  <span class="leave-balance-card__total">/ 4 days</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-danger-text);">0 remaining</div>
+              </div>
+
+              <div class="leave-balance-card">
+                <div class="leave-balance-card__header">
+                  <span class="leave-balance-card__type">Comp Off</span>
+                  <span class="badge badge-neutral no-dot">CO</span>
+                </div>
+                <div class="leave-balance-card__bar-track">
+                  <div class="leave-balance-card__bar-fill" style="width: 100%;"></div>
+                </div>
+                <div class="leave-balance-card__numbers">
+                  <span class="leave-balance-card__used">1</span>
+                  <span class="leave-balance-card__total">/ 1 day</span>
+                </div>
+                <div style="font-size: var(--text-xs); color: var(--color-text-muted);">Unused</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Calendar -->
+      <div id="tab-calendar" class="tab-content">
+        <div class="calendar">
+          <div class="calendar-header">
+            <div class="calendar-nav">
+              <button class="btn btn-icon btn-ghost btn-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+            </div>
+            <div class="calendar-header__title">November 2026</div>
+            <div class="calendar-nav">
+              <button class="btn btn-secondary btn-sm">Today</button>
+              <button class="btn btn-icon btn-ghost btn-sm">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="calendar-grid">
+            <div class="calendar-day-name">Sun</div>
+            <div class="calendar-day-name">Mon</div>
+            <div class="calendar-day-name">Tue</div>
+            <div class="calendar-day-name">Wed</div>
+            <div class="calendar-day-name">Thu</div>
+            <div class="calendar-day-name">Fri</div>
+            <div class="calendar-day-name">Sat</div>
+
+            <!-- Row 1 -->
+            <div class="calendar-day other-month weekend"><div class="calendar-day__num">26</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">27</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">28</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">29</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">30</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">31</div></div>
+            <div class="calendar-day weekend"><div class="calendar-day__num">1</div><div class="calendar-event holiday">🪔 Diwali</div></div>
+
+            <!-- Row 2 -->
+            <div class="calendar-day weekend"><div class="calendar-day__num">2</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">3</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">4</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">5</div><div class="calendar-event annual">PK - Annual</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">6</div><div class="calendar-event annual">PK - Annual</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">7</div></div>
+            <div class="calendar-day weekend"><div class="calendar-day__num">8</div></div>
+
+            <!-- Row 3 -->
+            <div class="calendar-day weekend"><div class="calendar-day__num">9</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">10</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">11</div><div class="calendar-event sick">AV - Sick</div></div>
+            <div class="calendar-day today"><div class="calendar-day__num">12</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">13</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">14</div><div class="calendar-event casual">RG - Casual</div></div>
+            <div class="calendar-day weekend"><div class="calendar-day__num">15</div></div>
+
+            <!-- Row 4 -->
+            <div class="calendar-day weekend"><div class="calendar-day__num">16</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">17</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">18</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">19</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">20</div><div class="calendar-event holiday">📅 Holiday</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">21</div></div>
+            <div class="calendar-day weekend"><div class="calendar-day__num">22</div></div>
+
+            <!-- Row 5 -->
+            <div class="calendar-day weekend"><div class="calendar-day__num">23</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">24</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">25</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">26</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">27</div></div>
+            <div class="calendar-day"><div class="calendar-day__num">28</div><div class="calendar-event annual">KN - Annual</div></div>
+            <div class="calendar-day weekend"><div class="calendar-day__num">29</div></div>
+
+            <!-- Row 6 -->
+            <div class="calendar-day weekend"><div class="calendar-day__num">30</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">1</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">2</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">3</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">4</div></div>
+            <div class="calendar-day other-month"><div class="calendar-day__num">5</div></div>
+            <div class="calendar-day other-month weekend"><div class="calendar-day__num">6</div></div>
+          </div>
+
+          <!-- Legend -->
+          <div style="padding: 16px 20px; border-top: 1px solid var(--color-border); display: flex; gap: 20px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-muted);">
+              <div style="width: 10px; height: 10px; border-radius: 2px; background: var(--color-accent);"></div>
+              Annual Leave
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-muted);">
+              <div style="width: 10px; height: 10px; border-radius: 2px; background: var(--color-danger);"></div>
+              Sick Leave
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-muted);">
+              <div style="width: 10px; height: 10px; border-radius: 2px; background: var(--color-success);"></div>
+              Casual Leave
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--color-text-muted);">
+              <div style="width: 10px; height: 10px; border-radius: 2px; background: var(--color-warning);"></div>
+              Holiday
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Policy -->
+      <div id="tab-policy" class="tab-content">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); max-width: 800px;">
+          <div class="policy-card">
+            <div class="policy-card__icon" style="background: var(--color-accent-soft); color: var(--color-accent);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="policy-card__title">Annual / Earned Leave</div>
+              <div class="policy-card__desc">20 days per year. Accrual at 1.67 days/month. Carry-forward up to 10 days. Encashment allowed at year end.</div>
+            </div>
+          </div>
+
+          <div class="policy-card">
+            <div class="policy-card__icon" style="background: var(--color-danger-soft); color: var(--color-danger-text);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            </div>
+            <div>
+              <div class="policy-card__title">Sick Leave</div>
+              <div class="policy-card__desc">6 days per year. Medical certificate required for 3+ consecutive days. No carry-forward or encashment.</div>
+            </div>
+          </div>
+
+          <div class="policy-card">
+            <div class="policy-card__icon" style="background: var(--color-success-soft); color: var(--color-success-text);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div>
+              <div class="policy-card__title">Casual Leave</div>
+              <div class="policy-card__desc">4 days per year. For short personal needs. Cannot be prefixed or suffixed to a holiday unless approved. No carry-forward.</div>
+            </div>
+          </div>
+
+          <div class="policy-card">
+            <div class="policy-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning-text);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div>
+              <div class="policy-card__title">Comp Off</div>
+              <div class="policy-card__desc">Granted for approved work on holidays. Must be availed within 30 days. Manager approval required before and after the working day.</div>
+            </div>
+          </div>
+
+          <div class="policy-card" style="grid-column: 1 / -1;">
+            <div class="policy-card__icon" style="background: var(--color-info-soft); color: var(--color-info-text);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div>
+              <div class="policy-card__title">Statutory & Special Leave</div>
+              <div class="policy-card__desc">Maternity leave (26 weeks), paternity leave (15 days), bereavement (5 days), marriage (3 days). Governed by applicable Labour Codes and company policy. These leaves are in addition to the standard entitlements. Contact HR for eligibility and documentation requirements.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ─── Apply Leave Modal ─────────────────────────────────── -->
+<div class="modal-overlay" id="leave-modal" style="display: none;" onclick="closeLeaveModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <div class="modal-header__title">Apply for Leave</div>
+        <div class="modal-header__desc">Submit a new leave request for approval</div>
+      </div>
+      <button class="modal-close" onclick="closeLeaveModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: 16px;">
+        <div class="form-group">
+          <label class="form-label required">Employee</label>
+          <select class="select">
+            <option>Priya Kumar (EMP-00142)</option>
+            <option>Amit Verma (EMP-00138)</option>
+            <option>Neha Singh (EMP-00155)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Leave Type</label>
+          <select class="select">
+            <option>Annual / Earned Leave</option>
+            <option>Sick Leave</option>
+            <option>Casual Leave</option>
+            <option>Comp Off</option>
+            <option>Maternity Leave</option>
+          </select>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+          <div class="form-group">
+            <label class="form-label required">From Date</label>
+            <input type="date" class="input" value="2026-11-05">
+          </div>
+          <div class="form-group">
+            <label class="form-label required">To Date</label>
+            <input type="date" class="input" value="2026-11-06">
+          </div>
+        </div>
+        <div style="padding: 12px 14px; background: var(--color-accent-soft); border: 1px solid rgba(99,102,241,0.2); border-radius: 8px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--color-accent);">2 working days</div>
+          <div style="font-size: 12px; color: var(--color-text-muted); margin-top: 3px;">Annual leave balance: 11 days remaining after this request</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label required">Reason</label>
+          <textarea class="textarea" placeholder="Brief reason for leave request…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Handover Contact</label>
+          <input type="text" class="input" placeholder="Who to contact during absence">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeLeaveModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="submitLeave()">Submit Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="../theme.js"></script>
+<script>
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+
+  function toggleMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+  }
+
+  function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+  }
+
+  function openLeaveModal() {
+    document.getElementById('leave-modal').style.display = 'flex';
+  }
+
+  function closeLeaveModal(e) {
+    if (!e || e.target === document.getElementById('leave-modal')) {
+      document.getElementById('leave-modal').style.display = 'none';
+    }
+  }
+
+  function submitLeave() {
+    document.getElementById('leave-modal').style.display = 'none';
+    showToast('Leave request submitted successfully', 'success');
+  }
+
+  function approveLeave(btn) {
+    const row = btn.closest('tr');
+    showToast('Leave approved', 'success');
+    row.style.opacity = '0.4';
+    row.style.pointerEvents = 'none';
+    setTimeout(() => row.remove(), 600);
+  }
+
+  function rejectLeave(btn) {
+    const row = btn.closest('tr');
+    showToast('Leave rejected', 'error');
+    row.style.opacity = '0.4';
+    row.style.pointerEvents = 'none';
+    setTimeout(() => row.remove(), 600);
+  }
+
+  function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+      <div class="toast__dot"></div>
+      <span class="toast__message">${message}</span>
+      <button class="toast__close" onclick="this.parentElement.remove()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeLeaveModal();
+  });
+</script>
+</body>
+</html>

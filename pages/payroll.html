@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — Payroll</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    /* ─── Payroll pipeline ─── */
+    .payroll-pipeline {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: var(--space-8);
+    }
+    .pipeline-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+    .pipeline-step::after {
+      content: '';
+      position: absolute;
+      top: 14px;
+      left: calc(50% + 14px);
+      right: calc(-50% + 14px);
+      height: 2px;
+      background: var(--color-border);
+    }
+    .pipeline-step:last-child::after { display: none; }
+    .pipeline-step.done::after { background: var(--color-success); }
+    .pipeline-step.active::after { background: var(--color-border); }
+    .pipeline-step__dot {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--text-xs);
+      font-weight: var(--weight-bold);
+      margin-bottom: var(--space-2);
+      position: relative;
+      z-index: 1;
+    }
+    .pipeline-step.done .pipeline-step__dot   { background: var(--color-success); color: white; }
+    .pipeline-step.active .pipeline-step__dot { background: var(--color-accent); color: white; outline: 3px solid var(--color-accent-soft); outline-offset: 2px; }
+    .pipeline-step.pending .pipeline-step__dot { background: var(--color-bg-overlay); color: var(--color-text-muted); border: 2px solid var(--color-border); }
+    .pipeline-step__label {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      text-align: center;
+      white-space: nowrap;
+    }
+    .pipeline-step.done .pipeline-step__label   { color: var(--color-success-text); }
+    .pipeline-step.active .pipeline-step__label { color: var(--color-accent); font-weight: var(--weight-semibold); }
+
+    /* ─── Payslip preview ─── */
+    .payslip-preview {
+      font-family: var(--font-mono);
+      font-size: var(--text-xs);
+    }
+    .payslip-row {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-3) 0;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .payslip-row:last-child { border-bottom: none; }
+    .payslip-total {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-4) 0;
+      border-top: 2px solid var(--color-border-strong);
+      font-size: var(--text-sm);
+      font-weight: var(--weight-bold);
+    }
+
+    /* ─── Exception flag ─── */
+    .exception-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-2xs);
+      font-weight: var(--weight-semibold);
+      padding: 2px var(--space-3);
+      border-radius: var(--radius-full);
+    }
+    .exception-badge.lop { background: var(--color-danger-soft); color: var(--color-danger-text); }
+    .exception-badge.bonus { background: var(--color-success-soft); color: var(--color-success-text); }
+    .exception-badge.adj { background: var(--color-warning-soft); color: var(--color-warning-text); }
+
+    /* ─── Month history ─── */
+    .month-row {
+      display: flex;
+      align-items: center;
+      gap: var(--space-5);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: 1px solid var(--color-border);
+      cursor: pointer;
+      transition: background var(--duration-fast);
+    }
+    .month-row:last-child { border-bottom: none; }
+    .month-row:hover { background: var(--color-bg-elevated); }
+
+    /* Mobile responsive */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 199;
+    }
+    .mobile-overlay.active { display: block; }
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      padding: 4px;
+      margin-right: var(--space-3);
+      align-items: center;
+    }
+    @media (max-width: 768px) {
+      .app-sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 200;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+      }
+      .app-sidebar.mobile-open { transform: translateX(0); }
+      .mobile-menu-btn { display: flex; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileSidebar()"></div>
+
+<div class="app-shell">
+
+  <!-- ─── Sidebar ──────────────────────────────────────────────── -->
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__logo">H</div>
+      <span class="sidebar-brand__name">PeopleOS</span>
+      <span class="sidebar-brand__badge">HRMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Main</div>
+        <a class="nav-item" href="dashboard.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span class="nav-item__label">Dashboard</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Workforce</div>
+        <a class="nav-item" href="employees.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span class="nav-item__label">Employees</span>
+        </a>
+        <a class="nav-item" href="attendance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="nav-item__label">Attendance</span>
+        </a>
+        <a class="nav-item" href="leave.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span class="nav-item__label">Leave</span>
+          <span class="nav-item__badge">8</span>
+        </a>
+        <a class="nav-item" href="performance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span class="nav-item__label">Performance</span>
+        </a>
+        <a class="nav-item" href="training.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <span class="nav-item__label">Training</span>
+        </a>
+        <a class="nav-item" href="engagement.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span class="nav-item__label">Engagement</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Hiring</div>
+        <a class="nav-item" href="recruitment.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+          <span class="nav-item__label">Recruitment</span>
+          <span class="nav-item__badge">3</span>
+        </a>
+        <a class="nav-item" href="onboarding.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+          <span class="nav-item__label">Onboarding</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Finance</div>
+        <a class="nav-item active" href="payroll.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span class="nav-item__label">Payroll</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">HR Ops</div>
+        <a class="nav-item" href="assets.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <span class="nav-item__label">Assets</span>
+        </a>
+        <a class="nav-item" href="promotions.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 21 7 17 3"/><line x1="21" y1="7" x2="9" y2="7"/><polyline points="7 21 3 17 7 13"/><line x1="3" y1="17" x2="15" y2="17"/></svg>
+          <span class="nav-item__label">Promotions</span>
+        </a>
+        <a class="nav-item" href="disciplinary.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span class="nav-item__label">Disciplinary</span>
+        </a>
+        <a class="nav-item" href="helpdesk.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span class="nav-item__label">Helpdesk</span>
+        </a>
+        <a class="nav-item" href="compliance.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span class="nav-item__label">Compliance</span>
+        </a>
+        <a class="nav-item" href="offboarding.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span class="nav-item__label">Offboarding</span>
+        </a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Config</div>
+        <a class="nav-item" href="analytics.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span class="nav-item__label">Analytics</span>
+        </a>
+        <a class="nav-item" href="settings.html">
+          <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M12 2a10 10 0 0 1 0 20"/></svg>
+          <span class="nav-item__label">Settings</span>
+        </a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer__avatar">RJ</div>
+      <div class="sidebar-footer__info"><div class="sidebar-footer__name">Rajat Joshi</div><div class="sidebar-footer__role">HR Manager</div></div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    </div>
+  </aside>
+
+  <!-- ─── Main ──────────────────────────────────────────────────── -->
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()" title="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <div class="topbar-breadcrumb">
+        <span class="topbar-breadcrumb__item">PeopleOS</span>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__item">Finance</span>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__current">Payroll</span>
+      </div>
+      <div class="topbar-search"><span class="topbar-search__icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" placeholder="Search employees, payslips…"></div>
+      <div class="topbar-actions"><div style="font-size:var(--text-xs);color:var(--color-text-muted);font-family:var(--font-mono);">Wed, 22 Oct 2026</div></div>
+    </header>
+
+    <div class="app-content">
+
+      <div class="page-header">
+        <div class="page-header__text">
+          <h1>Payroll</h1>
+          <p>Process salaries, review calculations, and generate payslips.</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="btn btn-secondary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Bank File
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openGenerateModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Generate Payroll
+          </button>
+        </div>
+      </div>
+
+      <!-- Stat cards -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--space-6);margin-bottom:var(--space-8);" class="stagger-children">
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__label">Gross Payroll</div><div class="stat-card__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
+          <div class="stat-card__value">₹42.8L</div>
+          <div class="stat-card__trend neutral">Oct 2026 · Draft</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__label">Net Payable</div><div class="stat-card__icon" style="background:var(--color-success-soft);color:var(--color-success);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
+          <div class="stat-card__value">₹36.1L</div>
+          <div class="stat-card__trend neutral">After deductions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__label">Employees</div><div class="stat-card__icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div></div>
+          <div class="stat-card__value">247</div>
+          <div class="stat-card__trend neutral">3 exceptions flagged</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header"><div class="stat-card__label">Status</div><div class="stat-card__icon" style="background:var(--color-warning-soft);color:var(--color-warning);"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+          <div class="stat-card__value" style="font-size:var(--text-xl);">Draft</div>
+          <div class="stat-card__trend neutral">Cutoff: Oct 31</div>
+        </div>
+      </div>
+
+      <!-- Payroll pipeline -->
+      <div class="card" style="padding:var(--space-6);margin-bottom:var(--space-6);">
+        <div style="font-size:var(--text-sm);font-weight:var(--weight-semibold);margin-bottom:var(--space-6);">October 2026 — Payroll Progress</div>
+        <div class="payroll-pipeline">
+          <div class="pipeline-step done">
+            <div class="pipeline-step__dot">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="pipeline-step__label">Attendance<br>Locked</div>
+          </div>
+          <div class="pipeline-step active">
+            <div class="pipeline-step__dot">2</div>
+            <div class="pipeline-step__label">Draft<br>Generated</div>
+          </div>
+          <div class="pipeline-step pending">
+            <div class="pipeline-step__dot">3</div>
+            <div class="pipeline-step__label">Review<br>Exceptions</div>
+          </div>
+          <div class="pipeline-step pending">
+            <div class="pipeline-step__dot">4</div>
+            <div class="pipeline-step__label">HR<br>Submit</div>
+          </div>
+          <div class="pipeline-step pending">
+            <div class="pipeline-step__dot">5</div>
+            <div class="pipeline-step__label">Finance<br>Approve</div>
+          </div>
+          <div class="pipeline-step pending">
+            <div class="pipeline-step__dot">6</div>
+            <div class="pipeline-step__label">Lock &amp;<br>Payslips</div>
+          </div>
+          <div class="pipeline-step pending">
+            <div class="pipeline-step__dot">7</div>
+            <div class="pipeline-step__label">Bank<br>Transfer</div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:var(--space-4);">
+          <button class="btn btn-secondary btn-sm">Recalculate Draft</button>
+          <button class="btn btn-secondary btn-sm" onclick="openExceptionsModal()">Review Exceptions <span class="badge badge-danger" style="margin-left:var(--space-2);">3</span></button>
+          <button class="btn btn-primary btn-sm" onclick="submitForApproval()">Submit for Approval</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tab-bar" style="margin-bottom:var(--space-6);">
+        <button class="tab-item active" onclick="switchTab(this,'employees')">Employee Breakdown</button>
+        <button class="tab-item" onclick="switchTab(this,'structures')">Salary Structures</button>
+        <button class="tab-item" onclick="switchTab(this,'history')">Run History</button>
+      </div>
+
+      <!-- ─── Tab: Employees ─────────────────────────────────── -->
+      <div id="tab-employees">
+        <div class="filter-bar" style="margin-bottom:var(--space-5);">
+          <div class="filter-bar__search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="Search employee…"></div>
+          <div class="filter-bar__filters">
+            <select class="form-select" style="width:auto;"><option>All Departments</option><option>Engineering</option><option>Sales</option></select>
+            <select class="form-select" style="width:auto;"><option>All Status</option><option>Normal</option><option>Has Exception</option></select>
+          </div>
+        </div>
+
+        <div class="card" style="overflow:hidden;">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Payable Days</th>
+                <th>LOP Days</th>
+                <th>Gross</th>
+                <th>Deductions</th>
+                <th>Net Pay</th>
+                <th>Exceptions</th>
+                <th style="text-align:right;">Payslip</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:var(--space-3);"><div class="avatar avatar-sm">PS</div><div><div style="font-size:var(--text-sm);font-weight:var(--weight-medium);">Priya Sharma</div><div style="font-size:var(--text-xs);color:var(--color-text-muted);font-family:var(--font-mono);">EMP-001</div></div></div></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">27</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">—</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);">₹2,40,000</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">₹38,420</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-bold);">₹2,01,580</td>
+                <td>—</td>
+                <td style="text-align:right;"><button class="btn btn-ghost btn-xs" onclick="openPayslip('Priya Sharma')">Preview</button></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:var(--space-3);"><div class="avatar avatar-sm">AV</div><div><div style="font-size:var(--text-sm);font-weight:var(--weight-medium);">Amit Verma</div><div style="font-size:var(--text-xs);color:var(--color-text-muted);font-family:var(--font-mono);">EMP-002</div></div></div></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">25</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);color:var(--color-danger-text);">2</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);">₹1,80,000</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">₹28,800</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-bold);">₹1,51,200</td>
+                <td><span class="exception-badge lop">LOP ×2</span></td>
+                <td style="text-align:right;"><button class="btn btn-ghost btn-xs" onclick="openPayslip('Amit Verma')">Preview</button></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:var(--space-3);"><div class="avatar avatar-sm">NS</div><div><div style="font-size:var(--text-sm);font-weight:var(--weight-medium);">Neha Singh</div><div style="font-size:var(--text-xs);color:var(--color-text-muted);font-family:var(--font-mono);">EMP-003</div></div></div></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">27</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">—</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);">₹1,40,000</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">₹22,400</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-bold);">₹1,17,600</td>
+                <td><span class="exception-badge bonus">Q3 Bonus</span></td>
+                <td style="text-align:right;"><button class="btn btn-ghost btn-xs" onclick="openPayslip('Neha Singh')">Preview</button></td>
+              </tr>
+              <tr>
+                <td><div style="display:flex;align-items:center;gap:var(--space-3);"><div class="avatar avatar-sm">RK</div><div><div style="font-size:var(--text-sm);font-weight:var(--weight-medium);">Rohan Kumar</div><div style="font-size:var(--text-xs);color:var(--color-text-muted);font-family:var(--font-mono);">EMP-004</div></div></div></td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">27</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">—</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);">₹2,10,000</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);">₹33,600</td>
+                <td style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-bold);">₹1,76,400</td>
+                <td>—</td>
+                <td style="text-align:right;"><button class="btn btn-ghost btn-xs" onclick="openPayslip('Rohan Kumar')">Preview</button></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Summary row -->
+          <div style="padding:var(--space-5) var(--space-6);border-top:2px solid var(--color-border-strong);background:var(--color-bg-elevated);display:flex;justify-content:flex-end;gap:var(--space-8);">
+            <div style="text-align:right;">
+              <div style="font-size:var(--text-xs);color:var(--color-text-muted);">Total Gross</div>
+              <div style="font-family:var(--font-mono);font-weight:var(--weight-bold);font-size:var(--text-base);">₹42,80,000</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:var(--text-xs);color:var(--color-text-muted);">Total Deductions</div>
+              <div style="font-family:var(--font-mono);font-weight:var(--weight-bold);font-size:var(--text-base);">₹6,72,000</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:var(--text-xs);color:var(--color-text-muted);">Total Net</div>
+              <div style="font-family:var(--font-mono);font-weight:var(--weight-bold);font-size:var(--text-xl);color:var(--color-text-primary);">₹36,08,000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─── Tab: Structures ───────────────────────────────── -->
+      <div id="tab-structures" style="display:none;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:var(--space-5);">
+
+          <div class="card" style="padding:var(--space-5);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5);">
+              <div>
+                <div style="font-size:var(--text-base);font-weight:var(--weight-semibold);">Senior IC Band</div>
+                <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px;">CTC Range: ₹20–35 LPA</div>
+              </div>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div style="background:var(--color-bg-elevated);border-radius:var(--radius-md);padding:var(--space-4);">
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">Basic Salary</span><span style="font-family:var(--font-mono);">40% of CTC</span></div>
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">HRA</span><span style="font-family:var(--font-mono);">20% of Basic</span></div>
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">Special Allowance</span><span style="font-family:var(--font-mono);">Balancing component</span></div>
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">Variable Pay</span><span style="font-family:var(--font-mono);">15% of CTC</span></div>
+              <div class="payslip-row"><span style="color:var(--color-danger-text);">PF (Employee)</span><span style="font-family:var(--font-mono);">12% of Basic</span></div>
+              <div class="payslip-row"><span style="color:var(--color-danger-text);">Professional Tax</span><span style="font-family:var(--font-mono);">₹200/month</span></div>
+            </div>
+            <div style="margin-top:var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted);">86 employees · Last revised Sep 2026</div>
+          </div>
+
+          <div class="card" style="padding:var(--space-5);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5);">
+              <div>
+                <div style="font-size:var(--text-base);font-weight:var(--weight-semibold);">Junior Band</div>
+                <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px;">CTC Range: ₹4–10 LPA</div>
+              </div>
+              <span class="badge badge-success">Active</span>
+            </div>
+            <div style="background:var(--color-bg-elevated);border-radius:var(--radius-md);padding:var(--space-4);">
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">Basic Salary</span><span style="font-family:var(--font-mono);">50% of CTC</span></div>
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">HRA</span><span style="font-family:var(--font-mono);">20% of Basic</span></div>
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">Conveyance</span><span style="font-family:var(--font-mono);">₹1,600/month</span></div>
+              <div class="payslip-row"><span style="color:var(--color-text-secondary);">Medical</span><span style="font-family:var(--font-mono);">₹1,250/month</span></div>
+              <div class="payslip-row"><span style="color:var(--color-danger-text);">PF (Employee)</span><span style="font-family:var(--font-mono);">12% of Basic</span></div>
+              <div class="payslip-row"><span style="color:var(--color-danger-text);">ESIC</span><span style="font-family:var(--font-mono);">0.75% of Gross</span></div>
+            </div>
+            <div style="margin-top:var(--space-4);font-size:var(--text-xs);color:var(--color-text-muted);">124 employees · Last revised Aug 2026</div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── Tab: History ──────────────────────────────────── -->
+      <div id="tab-history" style="display:none;">
+        <div class="card" style="overflow:hidden;">
+          <div style="padding:var(--space-5) var(--space-6);border-bottom:1px solid var(--color-border);">
+            <div style="font-size:var(--text-sm);font-weight:var(--weight-semibold);">Payroll Run History</div>
+          </div>
+          <div class="month-row">
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);width:100px;">Oct 2026</div>
+            <span class="badge badge-warning">Draft</span>
+            <div style="flex:1;"></div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);">₹42,80,000 gross</div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-muted);width:120px;text-align:right;">—</div>
+          </div>
+          <div class="month-row">
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);width:100px;">Sep 2026</div>
+            <span class="badge badge-success">Paid</span>
+            <div style="flex:1;"></div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);">₹41,20,000 gross</div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-muted);width:120px;text-align:right;">Sep 30, 2026</div>
+          </div>
+          <div class="month-row">
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);width:100px;">Aug 2026</div>
+            <span class="badge badge-success">Paid</span>
+            <div style="flex:1;"></div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);">₹39,80,000 gross</div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-muted);width:120px;text-align:right;">Aug 31, 2026</div>
+          </div>
+          <div class="month-row">
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);font-weight:var(--weight-semibold);width:100px;">Jul 2026</div>
+            <span class="badge badge-success">Paid</span>
+            <div style="flex:1;"></div>
+            <div style="font-family:var(--font-mono);font-size:var(--text-sm);">₹38,50,000 gross</div>
+            <div style="font-size:var(--text-xs);color:var(--color-text-muted);width:120px;text-align:right;">Jul 31, 2026</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /app-content -->
+  </div>
+</div><!-- /app-shell -->
+
+<!-- ─── Payslip Preview Modal ──────────────────────────────────── -->
+<div class="modal-overlay" id="payslipModal" style="display:none;">
+  <div class="modal" style="max-width:520px;width:100%;">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="payslipName">Payslip — Priya Sharma</div>
+        <div style="font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px;">October 2026 · EMP-001 · Engineering</div>
+      </div>
+      <button class="modal-close" onclick="closeModal('payslipModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:var(--color-bg-elevated);border-radius:var(--radius-md);padding:var(--space-5);margin-bottom:var(--space-5);">
+        <div style="font-size:var(--text-xs);font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:var(--tracking-wide);color:var(--color-text-muted);margin-bottom:var(--space-4);">Earnings</div>
+        <div class="payslip-preview">
+          <div class="payslip-row"><span>Basic Salary</span><span>₹80,000</span></div>
+          <div class="payslip-row"><span>HRA</span><span>₹16,000</span></div>
+          <div class="payslip-row"><span>Special Allowance</span><span>₹1,04,000</span></div>
+          <div class="payslip-row"><span>Medical Reimbursement</span><span>₹5,000</span></div>
+          <div class="payslip-row"><span>Performance Bonus</span><span>₹35,000</span></div>
+          <div class="payslip-total"><span>Gross Earnings</span><span>₹2,40,000</span></div>
+        </div>
+      </div>
+      <div style="background:var(--color-bg-elevated);border-radius:var(--radius-md);padding:var(--space-5);margin-bottom:var(--space-5);">
+        <div style="font-size:var(--text-xs);font-weight:var(--weight-semibold);text-transform:uppercase;letter-spacing:var(--tracking-wide);color:var(--color-text-muted);margin-bottom:var(--space-4);">Deductions</div>
+        <div class="payslip-preview">
+          <div class="payslip-row"><span>Provident Fund (Employee)</span><span style="color:var(--color-danger-text);">₹9,600</span></div>
+          <div class="payslip-row"><span>TDS (Income Tax)</span><span style="color:var(--color-danger-text);">₹28,420</span></div>
+          <div class="payslip-row"><span>Professional Tax</span><span style="color:var(--color-danger-text);">₹400</span></div>
+          <div class="payslip-total"><span>Total Deductions</span><span style="color:var(--color-danger-text);">₹38,420</span></div>
+        </div>
+      </div>
+      <div style="background:var(--color-accent-soft);border:1px solid var(--color-accent);border-radius:var(--radius-md);padding:var(--space-5);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);">Net Pay</div>
+          <div style="font-family:var(--font-mono);font-size:var(--text-2xl);font-weight:var(--weight-bold);">₹2,01,580</div>
+        </div>
+        <div style="text-align:right;font-size:var(--text-xs);color:var(--color-text-muted);">
+          <div>Payable Days: 27</div>
+          <div>LOP Days: 0</div>
+          <div>Pay Date: Oct 31</div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('payslipModal')">Close</button>
+      <button class="btn btn-primary btn-sm" onclick="downloadPayslip()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Exceptions Modal ───────────────────────────────────────── -->
+<div class="modal-overlay" id="exceptionsModal" style="display:none;">
+  <div class="modal" style="max-width:520px;width:100%;">
+    <div class="modal-header">
+      <div class="modal-title">Payroll Exceptions — Oct 2026</div>
+      <button class="modal-close" onclick="closeModal('exceptionsModal')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning" style="margin-bottom:var(--space-5);">Review each exception before submitting payroll for approval.</div>
+
+      <div style="display:flex;flex-direction:column;gap:var(--space-4);">
+        <div style="padding:var(--space-4);background:var(--color-bg-elevated);border-radius:var(--radius-md);border-left:3px solid var(--color-danger);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2);">
+            <span style="font-size:var(--text-sm);font-weight:var(--weight-semibold);">Amit Verma — LOP Deduction</span>
+            <span class="exception-badge lop">LOP ×2</span>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);">2 days of loss-of-pay deducted from gross. Unresolved absences on Oct 14 and Oct 20.</div>
+          <div style="margin-top:var(--space-3);display:flex;gap:var(--space-2);">
+            <button class="btn btn-success btn-xs">Accept</button>
+            <button class="btn btn-ghost btn-xs">Review Attendance</button>
+          </div>
+        </div>
+        <div style="padding:var(--space-4);background:var(--color-bg-elevated);border-radius:var(--radius-md);border-left:3px solid var(--color-success);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2);">
+            <span style="font-size:var(--text-sm);font-weight:var(--weight-semibold);">Neha Singh — Q3 Bonus</span>
+            <span class="exception-badge bonus">Bonus</span>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);">One-time Q3 performance bonus of ₹35,000 added per manager approval dated Oct 10.</div>
+          <div style="margin-top:var(--space-3);display:flex;gap:var(--space-2);">
+            <button class="btn btn-success btn-xs">Accept</button>
+            <button class="btn btn-ghost btn-xs">View Approval</button>
+          </div>
+        </div>
+        <div style="padding:var(--space-4);background:var(--color-bg-elevated);border-radius:var(--radius-md);border-left:3px solid var(--color-warning);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-2);">
+            <span style="font-size:var(--text-sm);font-weight:var(--weight-semibold);">Rohan Kumar — Arrears</span>
+            <span class="exception-badge adj">Adjustment</span>
+          </div>
+          <div style="font-size:var(--text-xs);color:var(--color-text-muted);">Salary revision effective Sep 1 not applied last month. Arrears of ₹8,000 included.</div>
+          <div style="margin-top:var(--space-3);display:flex;gap:var(--space-2);">
+            <button class="btn btn-success btn-xs">Accept</button>
+            <button class="btn btn-ghost btn-xs">View Revision</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('exceptionsModal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="acceptAllExceptions()">Accept All & Continue</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;display:flex;flex-direction:column;gap:8px;z-index:var(--z-toast);"></div>
+
+<script src="../theme.js"></script>
+<script>
+  function toggleMobileSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('mobile-overlay');
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+  }
+
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+
+  function switchTab(el, tab) {
+    document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    ['employees','structures','history'].forEach(id => {
+      const e = document.getElementById('tab-' + id);
+      if (e) e.style.display = (id === tab) ? '' : 'none';
+    });
+  }
+
+  function openPayslip(name) {
+    document.getElementById('payslipName').textContent = 'Payslip — ' + name;
+    document.getElementById('payslipModal').style.display = 'flex';
+  }
+  function openExceptionsModal() { document.getElementById('exceptionsModal').style.display = 'flex'; }
+  function openGenerateModal() { showToast('Payroll already generated for Oct 2026. View exceptions.', 'info'); }
+  function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+  function downloadPayslip() {
+    closeModal('payslipModal');
+    showToast('Payslip downloaded.', 'success');
+  }
+  function submitForApproval() {
+    showToast('Payroll submitted for Finance review.', 'success');
+    document.querySelector('.pipeline-step.active').classList.replace('active', 'done');
+    const steps = document.querySelectorAll('.pipeline-step.pending');
+    if (steps.length) steps[0].classList.replace('pending', 'active');
+  }
+  function acceptAllExceptions() {
+    closeModal('exceptionsModal');
+    showToast('All exceptions accepted. Ready to submit.', 'success');
+  }
+
+  document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.style.display = 'none'; }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); });
+
+  function showToast(msg, type) {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast toast-' + type; t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2800);
+  }
+</script>
+</body>
+</html>

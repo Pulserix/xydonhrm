@@ -1,0 +1,1128 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    body { padding: 0; }
+
+    .ds-layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .ds-sidenav {
+      width: 220px;
+      background: var(--color-bg-surface);
+      border-right: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      flex-shrink: 0;
+      padding: 24px 0;
+    }
+
+    .ds-sidenav__brand {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 16px;
+    }
+
+    .ds-sidenav__brand h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      letter-spacing: -0.02em;
+    }
+
+    .ds-sidenav__brand p {
+      font-size: 11px;
+      color: var(--color-text-muted);
+      margin-top: 2px;
+    }
+
+    .ds-sidenav a {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 20px;
+      font-size: 13px;
+      color: var(--color-text-muted);
+      text-decoration: none;
+      transition: color 0.12s, background 0.12s;
+      border-radius: 0;
+    }
+
+    .ds-sidenav a:hover { color: var(--color-text-primary); background: var(--color-bg-elevated); }
+    .ds-sidenav a.active { color: var(--color-accent); background: var(--color-accent-soft); }
+
+    .ds-sidenav__group {
+      margin-bottom: 20px;
+    }
+
+    .ds-sidenav__group-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0 20px;
+      margin-bottom: 6px;
+    }
+
+    .ds-content {
+      flex: 1;
+      padding: 48px 56px;
+      max-width: 1100px;
+      min-width: 0;
+    }
+
+    .ds-section {
+      margin-bottom: 72px;
+      scroll-margin-top: 32px;
+    }
+
+    .ds-section-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--color-text-primary);
+      letter-spacing: -0.03em;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .ds-section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-border);
+    }
+
+    .ds-section-desc {
+      font-size: 13px;
+      color: var(--color-text-muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .ds-subsection {
+      margin-bottom: 36px;
+    }
+
+    .ds-subsection-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ds-subsection-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--color-border-subtle);
+    }
+
+    .ds-row {
+      display: flex;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .ds-row.center { align-items: center; }
+
+    .ds-swatch {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .ds-color-block {
+      width: 80px;
+      height: 56px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .ds-color-label {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      text-align: center;
+    }
+
+    .ds-type-sample {
+      padding: 16px 20px;
+      background: var(--color-bg-elevated);
+      border-radius: 10px;
+      border: 1px solid var(--color-border);
+      margin-bottom: 6px;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .ds-type-meta {
+      font-size: 10px;
+      color: var(--color-text-muted);
+      font-family: var(--font-mono);
+      white-space: nowrap;
+    }
+
+    .ds-spacing-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .ds-space-sample {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .ds-space-block {
+      background: var(--color-accent-soft);
+      border: 1px solid var(--color-accent);
+      border-radius: 3px;
+      width: var(--space-w);
+      height: var(--space-w);
+      min-width: 4px;
+      min-height: 4px;
+    }
+
+    .ds-space-label {
+      font-size: 9px;
+      color: var(--color-text-muted);
+      font-family: var(--font-mono);
+      text-align: center;
+    }
+
+    .ds-component-demo {
+      background: var(--color-bg-elevated);
+      border: 1px solid var(--color-border);
+      border-radius: 14px;
+      padding: 28px;
+      margin-bottom: 8px;
+    }
+
+    .ds-component-demo.dark-grid {
+      background-image: radial-gradient(circle, var(--color-border) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+
+    .ds-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      background: var(--color-bg-overlay);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      font-size: 10px;
+      font-family: var(--font-mono);
+      color: var(--color-text-muted);
+    }
+
+    /* Nav pages */
+    .ds-pages {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 40px;
+      flex-wrap: wrap;
+    }
+
+    .ds-page-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .ds-page-link:hover {
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+      background: var(--color-accent-soft);
+    }
+
+    .token-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .token-table th {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .token-table td {
+      padding: 9px 12px;
+      border-bottom: 1px solid var(--color-border-subtle);
+      color: var(--color-text-secondary);
+      vertical-align: middle;
+    }
+
+    .token-table tr:last-child td { border-bottom: none; }
+
+    .token-table td:first-child {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--color-accent);
+    }
+
+    .token-table td .preview-color {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      border: 1px solid rgba(255,255,255,0.08);
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="ds-layout">
+
+  <!-- Side nav -->
+  <nav class="ds-sidenav">
+    <div class="ds-sidenav__brand">
+      <h2>HRMS Design System</h2>
+      <p>v1.0 — Component Reference</p>
+    </div>
+
+    <div class="ds-sidenav__group">
+      <div class="ds-sidenav__group-label">Foundation</div>
+      <a href="#colors">Colors</a>
+      <a href="#typography">Typography</a>
+      <a href="#spacing">Spacing</a>
+      <a href="#radius">Radius</a>
+    </div>
+
+    <div class="ds-sidenav__group">
+      <div class="ds-sidenav__group-label">Components</div>
+      <a href="#buttons">Buttons</a>
+      <a href="#badges">Badges</a>
+      <a href="#avatars">Avatars</a>
+      <a href="#inputs">Form Inputs</a>
+      <a href="#cards">Cards</a>
+      <a href="#tables">Tables</a>
+      <a href="#navigation">Navigation</a>
+      <a href="#feedback">Feedback</a>
+    </div>
+
+    <div class="ds-sidenav__group">
+      <div class="ds-sidenav__group-label">Pages</div>
+      <a href="dashboard.html">Dashboard</a>
+      <a href="employees.html">Employees</a>
+      <a href="leave.html">Leave</a>
+    </div>
+  </nav>
+
+  <!-- Main content -->
+  <main class="ds-content">
+
+    <!-- Header -->
+    <div style="margin-bottom: 48px;">
+      <h1 style="font-size: 36px; font-weight: 700; letter-spacing: -0.03em; color: var(--color-text-primary); line-height: 1.1; margin-bottom: 12px;">
+        HRMS Design System
+      </h1>
+      <p style="font-size: 15px; color: var(--color-text-secondary); max-width: 540px; line-height: 1.6; margin-bottom: 28px;">
+        A design-token–driven component library for the HR Management System.
+        Scale multiplier: φ^(1/φ) ≈ 1.3463 — golden ratio governing its own scale.
+      </p>
+
+      <!-- Page links -->
+      <div class="ds-pages">
+        <a href="dashboard.html" class="ds-page-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          Dashboard
+        </a>
+        <a href="employees.html" class="ds-page-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Employees
+        </a>
+        <a href="leave.html" class="ds-page-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          Leave
+        </a>
+      </div>
+    </div>
+
+
+    <!-- ─── COLORS ─────────────────────────────────────────── -->
+    <section id="colors" class="ds-section">
+      <h2 class="ds-section-title">Colors</h2>
+      <p class="ds-section-desc">All colors are CSS custom properties. Accent color is configurable at runtime via the theme panel (bottom-left).</p>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Backgrounds</div>
+        <div class="ds-row">
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-bg-base); border: 1px solid var(--color-border);"></div>
+            <div class="ds-color-label">bg-base</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-bg-surface);"></div>
+            <div class="ds-color-label">bg-surface</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-bg-elevated);"></div>
+            <div class="ds-color-label">bg-elevated</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-bg-overlay);"></div>
+            <div class="ds-color-label">bg-overlay</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-bg-overlay-2);"></div>
+            <div class="ds-color-label">bg-overlay-2</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Accent (configurable)</div>
+        <div class="ds-row">
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-accent);"></div>
+            <div class="ds-color-label">accent</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-accent-hover);"></div>
+            <div class="ds-color-label">accent-hover</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-accent-soft); border: 1px solid var(--color-border);"></div>
+            <div class="ds-color-label">accent-soft</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Semantic</div>
+        <div class="ds-row">
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-success);"></div>
+            <div class="ds-color-label">success</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-success-soft); border: 1px solid var(--color-border);"></div>
+            <div class="ds-color-label">success-soft</div>
+          </div>
+          <div class="ds-swatch" style="margin-left: 12px;">
+            <div class="ds-color-block" style="background: var(--color-warning);"></div>
+            <div class="ds-color-label">warning</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-warning-soft); border: 1px solid var(--color-border);"></div>
+            <div class="ds-color-label">warning-soft</div>
+          </div>
+          <div class="ds-swatch" style="margin-left: 12px;">
+            <div class="ds-color-block" style="background: var(--color-danger);"></div>
+            <div class="ds-color-label">danger</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-danger-soft); border: 1px solid var(--color-border);"></div>
+            <div class="ds-color-label">danger-soft</div>
+          </div>
+          <div class="ds-swatch" style="margin-left: 12px;">
+            <div class="ds-color-block" style="background: var(--color-info);"></div>
+            <div class="ds-color-label">info</div>
+          </div>
+          <div class="ds-swatch">
+            <div class="ds-color-block" style="background: var(--color-info-soft); border: 1px solid var(--color-border);"></div>
+            <div class="ds-color-label">info-soft</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── TYPOGRAPHY ─────────────────────────────────────── -->
+    <section id="typography" class="ds-section">
+      <h2 class="ds-section-title">Typography</h2>
+      <p class="ds-section-desc">Font: <strong>Plus Jakarta Sans</strong>. Scale base 14px × 1.3463 (φ^(1/φ)).</p>
+
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-4xl); font-weight: 700; letter-spacing: -0.03em; line-height: 1;">HR Dashboard</span>
+        <span class="ds-type-meta">--text-4xl / 48px / bold</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-3xl); font-weight: 700; letter-spacing: -0.03em;">Total Employees</span>
+        <span class="ds-type-meta">--text-3xl / 36px / bold</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-2xl); font-weight: 700; letter-spacing: -0.02em;">Employee Directory</span>
+        <span class="ds-type-meta">--text-2xl / 28px / bold</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-xl); font-weight: 600; letter-spacing: -0.015em;">Pending Approvals</span>
+        <span class="ds-type-meta">--text-xl / 22px / semibold</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-lg); font-weight: 600;">Leave Management</span>
+        <span class="ds-type-meta">--text-lg / 18px / semibold</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-md); font-weight: 500;">Section heading or card title</span>
+        <span class="ds-type-meta">--text-md / 15px / medium</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-base);">Default body text. Employee status, descriptions, and most UI copy use this size.</span>
+        <span class="ds-type-meta">--text-base / 14px / regular</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-sm); color: var(--color-text-secondary);">Table cells, sidebar nav items, form labels</span>
+        <span class="ds-type-meta">--text-sm / 13px / regular</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-xs); color: var(--color-text-muted);">Meta information, timestamps, helper text</span>
+        <span class="ds-type-meta">--text-xs / 12px / regular</span>
+      </div>
+      <div class="ds-type-sample">
+        <span style="font-size: var(--text-2xs); color: var(--color-text-muted); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600;">SECTION LABEL / COLUMN HEADER</span>
+        <span class="ds-type-meta">--text-2xs / 10px / semibold</span>
+      </div>
+
+      <div style="margin-top: 24px;">
+        <div class="ds-subsection-label">Monospace</div>
+        <div class="ds-type-sample">
+          <span style="font-family: var(--font-mono); font-size: 13px;">EMP-00142 · 2026-10-22 · 09:32:14</span>
+          <span class="ds-type-meta">--font-mono / JetBrains Mono</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── SPACING ────────────────────────────────────────── -->
+    <section id="spacing" class="ds-section">
+      <h2 class="ds-section-title">Spacing</h2>
+      <p class="ds-section-desc">Base 4px, multiplier φ^(1/φ) ≈ 1.3463. Each step = previous × 1.3463.</p>
+
+      <div class="ds-spacing-row">
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 4px; height: 4px;"></div>
+          <div class="ds-space-label">--space-1<br>4px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 5px; height: 5px;"></div>
+          <div class="ds-space-label">--space-2<br>5px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 7px; height: 7px;"></div>
+          <div class="ds-space-label">--space-3<br>7px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 10px; height: 10px;"></div>
+          <div class="ds-space-label">--space-4<br>10px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 13px; height: 13px;"></div>
+          <div class="ds-space-label">--space-5<br>13px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 18px; height: 18px;"></div>
+          <div class="ds-space-label">--space-6<br>18px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 24px; height: 24px;"></div>
+          <div class="ds-space-label">--space-7<br>24px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 32px; height: 32px;"></div>
+          <div class="ds-space-label">--space-8<br>32px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 43px; height: 43px;"></div>
+          <div class="ds-space-label">--space-9<br>43px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 58px; height: 58px;"></div>
+          <div class="ds-space-label">--space-10<br>58px</div>
+        </div>
+        <div class="ds-space-sample">
+          <div style="background: var(--color-accent-soft); border: 1px solid var(--color-accent); border-radius: 3px; width: 78px; height: 78px;"></div>
+          <div class="ds-space-label">--space-11<br>78px</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── RADIUS ─────────────────────────────────────────── -->
+    <section id="radius" class="ds-section">
+      <h2 class="ds-section-title">Border Radius</h2>
+      <div class="ds-row center">
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-xs);"></div>
+          <div class="ds-color-label" style="margin-top:8px">xs / 3px</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-sm);"></div>
+          <div class="ds-color-label" style="margin-top:8px">sm / 5px</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-md);"></div>
+          <div class="ds-color-label" style="margin-top:8px">md / 8px</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-lg);"></div>
+          <div class="ds-color-label" style="margin-top:8px">lg / 12px</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-xl);"></div>
+          <div class="ds-color-label" style="margin-top:8px">xl / 16px</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-2xl);"></div>
+          <div class="ds-color-label" style="margin-top:8px">2xl / 22px</div>
+        </div>
+        <div style="text-align:center">
+          <div style="width:60px;height:60px;background:var(--color-bg-elevated);border:1px solid var(--color-border);border-radius:var(--radius-full);"></div>
+          <div class="ds-color-label" style="margin-top:8px">full</div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── BUTTONS ────────────────────────────────────────── -->
+    <section id="buttons" class="ds-section">
+      <h2 class="ds-section-title">Buttons</h2>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Variants</div>
+        <div class="ds-component-demo">
+          <div class="ds-row center">
+            <button class="btn btn-primary">Primary</button>
+            <button class="btn btn-secondary">Secondary</button>
+            <button class="btn btn-outline">Outline</button>
+            <button class="btn btn-ghost">Ghost</button>
+            <button class="btn btn-danger">Danger</button>
+            <button class="btn btn-success">Approve</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Sizes</div>
+        <div class="ds-component-demo">
+          <div class="ds-row center">
+            <button class="btn btn-primary btn-sm">Small</button>
+            <button class="btn btn-primary">Medium</button>
+            <button class="btn btn-primary btn-lg">Large</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">With icons</div>
+        <div class="ds-component-demo">
+          <div class="ds-row center">
+            <button class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Employee
+            </button>
+            <button class="btn btn-secondary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+            <button class="btn btn-icon btn-secondary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            </button>
+            <button class="btn btn-icon btn-ghost">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">States</div>
+        <div class="ds-component-demo">
+          <div class="ds-row center">
+            <button class="btn btn-primary" disabled>Disabled</button>
+            <button class="btn btn-primary">
+              <span class="spinner spinner-sm"></span>
+              Loading
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── BADGES ─────────────────────────────────────────── -->
+    <section id="badges" class="ds-section">
+      <h2 class="ds-section-title">Badges & Status Pills</h2>
+      <div class="ds-component-demo">
+        <div class="ds-row center" style="flex-wrap: wrap; gap: 10px;">
+          <span class="badge badge-success">Active</span>
+          <span class="badge badge-warning">On Leave</span>
+          <span class="badge badge-danger">Terminated</span>
+          <span class="badge badge-info">Probation</span>
+          <span class="badge badge-neutral">Inactive</span>
+          <span class="badge badge-accent">New Hire</span>
+          <span class="badge badge-success no-dot">Approved</span>
+          <span class="badge badge-danger no-dot">Rejected</span>
+          <span class="badge badge-warning no-dot">Pending</span>
+          <span class="badge badge-info no-dot">Under Review</span>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── AVATARS ─────────────────────────────────────────── -->
+    <section id="avatars" class="ds-section">
+      <h2 class="ds-section-title">Avatars</h2>
+      <div class="ds-component-demo">
+        <div class="ds-row center">
+          <div class="avatar avatar-sm">PK</div>
+          <div class="avatar">AV</div>
+          <div class="avatar avatar-lg">NS</div>
+          <div class="avatar avatar-xl">RJ</div>
+          <div style="width:1px; height:32px; background:var(--color-border); margin: 0 8px;"></div>
+          <div class="avatar-group">
+            <div class="avatar">PK</div>
+            <div class="avatar">AV</div>
+            <div class="avatar">NS</div>
+            <div class="avatar-group__more">+4</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── INPUTS ─────────────────────────────────────────── -->
+    <section id="inputs" class="ds-section">
+      <h2 class="ds-section-title">Form Inputs</h2>
+
+      <div class="ds-component-demo" style="max-width: 560px;">
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+
+          <div class="form-group">
+            <label class="form-label required">Full Name</label>
+            <input type="text" class="input" placeholder="Priya Sharma">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <div class="input-wrapper">
+              <span class="input-wrapper__prefix">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input type="email" class="input" placeholder="priya@company.com">
+            </div>
+            <span class="form-helper">Used for system notifications and payslips</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <select class="select">
+              <option>Select department</option>
+              <option>Operations</option>
+              <option>Engineering</option>
+              <option>Human Resources</option>
+              <option>Finance</option>
+              <option>Sales</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Error State</label>
+            <input type="text" class="input error" value="Invalid input">
+            <span class="form-error">Employee ID already exists in the system</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <label class="checkbox-wrapper">
+              <input type="checkbox" checked>
+              Send welcome email on activation
+            </label>
+            <label class="checkbox-wrapper">
+              <input type="checkbox">
+              Require document verification before access
+            </label>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <label class="radio-wrapper">
+              <input type="radio" name="emp-type" checked>
+              Full-time employee
+            </label>
+            <label class="radio-wrapper">
+              <input type="radio" name="emp-type">
+              Contract / temporary
+            </label>
+            <label class="radio-wrapper">
+              <input type="radio" name="emp-type">
+              Intern
+            </label>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <label class="toggle-wrapper">
+              <div class="toggle">
+                <input type="checkbox" checked>
+                <div class="toggle__track"></div>
+                <div class="toggle__thumb"></div>
+              </div>
+              <span style="font-size: 13px; color: var(--color-text-secondary);">Auto-assign onboarding checklist</span>
+            </label>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── CARDS ──────────────────────────────────────────── -->
+    <section id="cards" class="ds-section">
+      <h2 class="ds-section-title">Cards</h2>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Stat Cards</div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;" class="stagger-children">
+          <div class="stat-card">
+            <div class="stat-card__header">
+              <div class="stat-card__label">Total Employees</div>
+              <div class="stat-card__icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+            </div>
+            <div class="stat-card__value">247</div>
+            <div class="stat-card__trend up">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+              +3 this month
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card__header">
+              <div class="stat-card__label">Present Today</div>
+              <div class="stat-card__icon" style="background: var(--color-success-soft); color: var(--color-success);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+            <div class="stat-card__value">218</div>
+            <div class="stat-card__trend neutral">88.2% attendance rate</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card__header">
+              <div class="stat-card__label">On Leave</div>
+              <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+            </div>
+            <div class="stat-card__value">22</div>
+            <div class="stat-card__trend neutral">7 returning tomorrow</div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-card__header">
+              <div class="stat-card__label">Open Positions</div>
+              <div class="stat-card__icon" style="background: var(--color-info-soft); color: var(--color-info);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+              </div>
+            </div>
+            <div class="stat-card__value">14</div>
+            <div class="stat-card__trend neutral">2 offers pending</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Content Card</div>
+        <div class="card" style="max-width: 400px;">
+          <div class="card-header">
+            <span class="card-header__title">Pending Approvals</span>
+            <span class="badge badge-warning">8</span>
+          </div>
+          <div class="card-body">
+            <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.6;">
+              Leave requests, expense claims, and attendance corrections awaiting your action.
+            </p>
+          </div>
+          <div class="card-footer" style="display: flex; justify-content: flex-end; gap: 8px;">
+            <button class="btn btn-ghost btn-sm">Dismiss</button>
+            <button class="btn btn-primary btn-sm">View All</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── TABLES ─────────────────────────────────────────── -->
+    <section id="tables" class="ds-section">
+      <h2 class="ds-section-title">Tables</h2>
+      <div class="table-wrapper">
+        <table class="table">
+          <thead>
+            <tr>
+              <th class="table-checkbox"><input type="checkbox"></th>
+              <th class="sortable">Employee</th>
+              <th>Department</th>
+              <th>Designation</th>
+              <th>Status</th>
+              <th>Joined</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="table-checkbox"><input type="checkbox"></td>
+              <td>
+                <div class="table-user">
+                  <div class="avatar">PK</div>
+                  <div class="table-user__info">
+                    <div class="table-user__name">Priya Kumar</div>
+                    <div class="table-user__meta">EMP-00142</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted">Operations</td>
+              <td class="muted">Senior Manager</td>
+              <td><span class="badge badge-success">Active</span></td>
+              <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">14 Mar 2024</td>
+              <td>
+                <div class="table-actions">
+                  <button class="btn btn-icon btn-ghost btn-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="btn btn-icon btn-ghost btn-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="table-checkbox"><input type="checkbox"></td>
+              <td>
+                <div class="table-user">
+                  <div class="avatar" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div>
+                  <div class="table-user__info">
+                    <div class="table-user__name">Amit Verma</div>
+                    <div class="table-user__meta">EMP-00138</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted">Sales</td>
+              <td class="muted">Executive</td>
+              <td><span class="badge badge-warning">On Leave</span></td>
+              <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">07 Jan 2023</td>
+              <td>
+                <div class="table-actions">
+                  <button class="btn btn-icon btn-ghost btn-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="btn btn-icon btn-ghost btn-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td class="table-checkbox"><input type="checkbox"></td>
+              <td>
+                <div class="table-user">
+                  <div class="avatar" style="background: var(--color-info-soft); color: var(--color-info-text);">NS</div>
+                  <div class="table-user__info">
+                    <div class="table-user__name">Neha Singh</div>
+                    <div class="table-user__meta">EMP-00155</div>
+                  </div>
+                </div>
+              </td>
+              <td class="muted">HR</td>
+              <td class="muted">HR Executive</td>
+              <td><span class="badge badge-info">Probation</span></td>
+              <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">01 Oct 2026</td>
+              <td>
+                <div class="table-actions">
+                  <button class="btn btn-icon btn-ghost btn-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  </button>
+                  <button class="btn btn-icon btn-ghost btn-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="pagination">
+          <span class="pagination__info">Showing 1–3 of 247 employees</span>
+          <div class="pagination__controls">
+            <button class="page-btn" disabled>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <span style="font-size: 12px; color: var(--color-text-muted); padding: 0 4px;">…</span>
+            <button class="page-btn">83</button>
+            <button class="page-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── NAVIGATION ─────────────────────────────────────── -->
+    <section id="navigation" class="ds-section">
+      <h2 class="ds-section-title">Navigation</h2>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Tabs</div>
+        <div class="ds-component-demo">
+          <div class="tabs">
+            <div class="tab active">Overview</div>
+            <div class="tab">
+              Leave Requests
+              <span class="tab__count">12</span>
+            </div>
+            <div class="tab">Balances</div>
+            <div class="tab">Calendar</div>
+            <div class="tab">Policy</div>
+          </div>
+          <p style="font-size: 13px; color: var(--color-text-muted);">Tab content would appear here.</p>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Sidebar Nav (sample)</div>
+        <div class="ds-component-demo" style="max-width: 260px; padding: 16px 0;">
+          <a class="nav-item active" href="#">
+            <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span class="nav-item__label">Dashboard</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span class="nav-item__label">Employees</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span class="nav-item__label">Leave</span>
+            <span class="nav-item__badge">8</span>
+          </a>
+          <a class="nav-item" href="#">
+            <svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span class="nav-item__label">Payroll</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ─── FEEDBACK ───────────────────────────────────────── -->
+    <section id="feedback" class="ds-section">
+      <h2 class="ds-section-title">Feedback</h2>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Alerts</div>
+        <div style="display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
+          <div class="alert alert-success">
+            <svg class="alert__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div class="alert__content">
+              <div class="alert__title">Leave approved</div>
+              <div class="alert__message">Priya Kumar's annual leave (Nov 5–6) has been approved and the balance updated.</div>
+            </div>
+          </div>
+          <div class="alert alert-warning">
+            <svg class="alert__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="alert__content">
+              <div class="alert__title">Payroll cutoff in 3 days</div>
+              <div class="alert__message">Ensure all attendance corrections are submitted before Oct 25, 2026.</div>
+            </div>
+          </div>
+          <div class="alert alert-danger">
+            <svg class="alert__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <div class="alert__content">
+              <div class="alert__title">Document expired</div>
+              <div class="alert__message">Rahul Joshi's identity document expired on Oct 18. Action required.</div>
+            </div>
+          </div>
+          <div class="alert alert-info">
+            <svg class="alert__icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="alert__content">
+              <div class="alert__title">Onboarding reminder</div>
+              <div class="alert__message">3 new joiners this week. Onboarding checklists have been auto-assigned.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Skeleton Loaders</div>
+        <div class="ds-component-demo" style="max-width: 400px;">
+          <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+            <div class="skeleton skeleton-avatar"></div>
+            <div style="flex:1; display: flex; flex-direction: column; gap: 8px;">
+              <div class="skeleton skeleton-text" style="width: 60%;"></div>
+              <div class="skeleton skeleton-text sm" style="width: 40%;"></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div class="skeleton skeleton-text" style="width: 100%;"></div>
+            <div class="skeleton skeleton-text" style="width: 85%;"></div>
+            <div class="skeleton skeleton-text" style="width: 70%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ds-subsection">
+        <div class="ds-subsection-label">Empty State</div>
+        <div class="ds-component-demo" style="max-width: 400px;">
+          <div class="empty-state">
+            <div class="empty-state__icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div class="empty-state__title">No leave requests</div>
+            <div class="empty-state__desc">Your team has no pending leave requests right now. They'll appear here when submitted.</div>
+            <button class="btn btn-outline btn-sm">View all history</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="../theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — HR Compliance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Policy card */
+    .policy-card {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      padding: var(--space-5) var(--space-6);
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-4);
+      transition: border-color var(--duration-fast);
+      cursor: pointer;
+    }
+    .policy-card:hover { border-color: var(--color-border-strong); }
+    .policy-card__icon { width: 40px; height: 40px; border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .policy-card__title { font-size: var(--text-sm); font-weight: var(--weight-semibold); color: var(--color-text-primary); }
+    .policy-card__meta { font-size: var(--text-xs); color: var(--color-text-muted); margin-top: 4px; }
+    .policy-card__actions { display: flex; gap: var(--space-2); margin-top: var(--space-3); }
+
+    /* Ack progress */
+    .ack-track { height: 5px; background: var(--color-bg-overlay-2); border-radius: var(--radius-full); overflow: hidden; margin-top: var(--space-2); }
+    .ack-fill { height: 100%; background: var(--color-accent); border-radius: var(--radius-full); }
+
+    /* Calendar task dot */
+    .cal-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Mobile */
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: calc(var(--z-modal) - 1); backdrop-filter: blur(2px); }
+    .mobile-overlay.active { display: block; }
+    .mobile-menu-btn { display: none; align-items: center; justify-content: center; width: 32px; height: 32px; background: none; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); cursor: pointer; flex-shrink: 0; }
+    @media (max-width: 768px) {
+      .app-sidebar { transform: translateX(-100%); transition: transform var(--duration-slow) var(--ease-out); z-index: var(--z-modal); }
+      .app-sidebar.mobile-open { transform: translateX(0); }
+      .app-sidebar.collapsed { width: var(--sidebar-width); }
+      .app-main { margin-left: 0 !important; }
+      .mobile-menu-btn { display: flex; }
+      .topbar-search { display: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+      .page-header { flex-wrap: wrap; }
+      .page-header__actions { width: 100%; }
+      .policy-grid { grid-template-columns: 1fr !important; }
+    }
+    @media (max-width: 480px) {
+      .app-content { padding: var(--space-5); }
+      .stats-row { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileSidebar()"></div>
+<div class="app-shell">
+
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__logo">H</div>
+      <span class="sidebar-brand__name">PeopleOS</span>
+      <span class="sidebar-brand__badge">HRMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Main</div>
+        <a class="nav-item" href="dashboard.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="nav-item__label">Dashboard</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Workforce</div>
+        <a class="nav-item" href="employees.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-item__label">Employees</span></a>
+        <a class="nav-item" href="attendance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="nav-item__label">Attendance</span></a>
+        <a class="nav-item" href="leave.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-item__label">Leave</span></a>
+        <a class="nav-item" href="performance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg><span class="nav-item__label">Performance</span></a>
+        <a class="nav-item" href="training.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="nav-item__label">Training</span></a>
+        <a class="nav-item" href="engagement.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="nav-item__label">Engagement</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Hiring</div>
+        <a class="nav-item" href="recruitment.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg><span class="nav-item__label">Recruitment</span></a>
+        <a class="nav-item" href="onboarding.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span class="nav-item__label">Onboarding</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Finance</div>
+        <a class="nav-item" href="payroll.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="nav-item__label">Payroll</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">HR Ops</div>
+        <a class="nav-item" href="assets.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><span class="nav-item__label">Assets</span></a>
+        <a class="nav-item" href="promotions.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg><span class="nav-item__label">Promotions</span></a>
+        <a class="nav-item" href="disciplinary.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-item__label">Disciplinary</span></a>
+        <a class="nav-item" href="helpdesk.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-item__label">Helpdesk</span></a>
+        <a class="nav-item active" href="compliance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="nav-item__label">Compliance</span></a>
+        <a class="nav-item" href="offboarding.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="nav-item__label">Offboarding</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Config</div>
+        <a class="nav-item" href="analytics.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="nav-item__label">Analytics</span></a>
+        <a class="nav-item" href="settings.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M12 2a10 10 0 0 1 0 20"/></svg><span class="nav-item__label">Settings</span></a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer__avatar">RJ</div>
+      <div class="sidebar-footer__info"><div class="sidebar-footer__name">Rajat Joshi</div><div class="sidebar-footer__role">HR Manager</div></div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-breadcrumb">
+        <a href="dashboard.html" class="topbar-breadcrumb__item">PeopleOS</a>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__current">HR Compliance</span>
+      </div>
+      <div class="topbar-search">
+        <span class="topbar-search__icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input type="text" placeholder="Search policies…">
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-action-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <div class="app-content">
+      <div class="page-header">
+        <div class="page-header__text">
+          <h1>HR Policies &amp; Compliance</h1>
+          <p>Manage policies, track acknowledgments, and monitor compliance obligations.</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Exporting compliance report…', 'info')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Report
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openPolicyModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Policy
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Active Policies</div>
+            <div class="stat-card__icon" style="background: var(--color-accent-soft); color: var(--color-accent);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">34</div>
+          <div class="stat-card__trend neutral">3 updated this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Pending Acks</div>
+            <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">142</div>
+          <div class="stat-card__trend neutral">Across 8 policies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Due This Month</div>
+            <div class="stat-card__icon" style="background: var(--color-info-soft); color: var(--color-info);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">8</div>
+          <div class="stat-card__trend neutral">Compliance obligations</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Overdue Tasks</div>
+            <div class="stat-card__icon" style="background: var(--color-danger-soft); color: var(--color-danger);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">3</div>
+          <div class="stat-card__trend neutral">Immediate attention needed</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'library')">Policy Library <span class="tab__count">34</span></div>
+        <div class="tab" onclick="switchTab(this,'acknowledgments')">Acknowledgments <span class="tab__count">142</span></div>
+        <div class="tab" onclick="switchTab(this,'tasks')">Compliance Tasks</div>
+      </div>
+
+      <!-- Tab: Policy Library -->
+      <div id="tab-library" class="tab-content active">
+        <div class="filter-bar">
+          <div class="filter-bar__search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search policies…">
+          </div>
+          <div class="filter-bar__filters">
+            <select class="filter-select"><option>All Categories</option><option>HR Policy</option><option>Code of Conduct</option><option>IT Security</option><option>Safety</option><option>Statutory</option></select>
+            <select class="filter-select"><option>All Status</option><option>Active</option><option>Draft</option><option>Archived</option></select>
+          </div>
+        </div>
+        <div class="policy-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4);">
+
+          <div class="policy-card" onclick="showToast('Opening policy…', 'info')">
+            <div class="policy-card__icon" style="background: var(--color-accent-soft);">📋</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                <div class="policy-card__title">Employee Code of Conduct</div>
+                <span class="badge badge-success no-dot" style="flex-shrink: 0; margin-left: var(--space-3);">Active</span>
+              </div>
+              <div class="policy-card__meta">Version 3.1 · Updated Oct 2026 · Requires acknowledgment</div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="ack-track" style="flex: 1;"><div class="ack-fill" style="width: 84%;"></div></div>
+                <span style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">84% acknowledged</span>
+              </div>
+              <div class="policy-card__actions">
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Edit</button>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showToast('Reminder sent', 'success')">Send Reminder</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="policy-card" onclick="showToast('Opening policy…', 'info')">
+            <div class="policy-card__icon" style="background: var(--color-danger-soft);">🛡️</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                <div class="policy-card__title">POSH Policy</div>
+                <span class="badge badge-success no-dot" style="flex-shrink: 0; margin-left: var(--space-3);">Active</span>
+              </div>
+              <div class="policy-card__meta">Version 2.0 · Updated Apr 2026 · Statutory requirement</div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="ack-track" style="flex: 1;"><div class="ack-fill" style="width: 91%; background: var(--color-success);"></div></div>
+                <span style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">91% acknowledged</span>
+              </div>
+              <div class="policy-card__actions">
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Edit</button>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showToast('Reminder sent', 'success')">Send Reminder</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="policy-card" onclick="showToast('Opening policy…', 'info')">
+            <div class="policy-card__icon" style="background: var(--color-info-soft);">🔐</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                <div class="policy-card__title">IT Security &amp; Acceptable Use</div>
+                <span class="badge badge-warning no-dot" style="flex-shrink: 0; margin-left: var(--space-3);">Draft</span>
+              </div>
+              <div class="policy-card__meta">Version 1.2 · Under review · Not yet published</div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="ack-track" style="flex: 1;"><div class="ack-fill" style="width: 0%;"></div></div>
+                <span style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">Not published</span>
+              </div>
+              <div class="policy-card__actions">
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showToast('Policy published', 'success')">Publish</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Edit</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="policy-card" onclick="showToast('Opening policy…', 'info')">
+            <div class="policy-card__icon" style="background: var(--color-warning-soft);">⚠️</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                <div class="policy-card__title">Workplace Safety Policy</div>
+                <span class="badge badge-success no-dot" style="flex-shrink: 0; margin-left: var(--space-3);">Active</span>
+              </div>
+              <div class="policy-card__meta">Version 1.5 · Updated Jan 2026 · Requires acknowledgment</div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="ack-track" style="flex: 1;"><div class="ack-fill" style="width: 62%; background: var(--color-warning);"></div></div>
+                <span style="font-size: var(--text-xs); color: var(--color-warning-text); flex-shrink: 0;">62% acknowledged</span>
+              </div>
+              <div class="policy-card__actions">
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Edit</button>
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation(); showToast('Reminder sent to 108 employees', 'success')">Remind Pending</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="policy-card" onclick="showToast('Opening policy…', 'info')">
+            <div class="policy-card__icon" style="background: var(--color-success-soft);">💰</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                <div class="policy-card__title">Reimbursement &amp; Expense Policy</div>
+                <span class="badge badge-success no-dot" style="flex-shrink: 0; margin-left: var(--space-3);">Active</span>
+              </div>
+              <div class="policy-card__meta">Version 2.2 · Updated Jul 2026 · Optional acknowledgment</div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="ack-track" style="flex: 1;"><div class="ack-fill" style="width: 78%; background: var(--color-success);"></div></div>
+                <span style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">78% acknowledged</span>
+              </div>
+              <div class="policy-card__actions">
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Edit</button>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation(); showToast('Viewing acknowledgments…', 'info')">View Acks</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="policy-card" onclick="showToast('Opening policy…', 'info')">
+            <div class="policy-card__icon" style="background: var(--color-neutral-soft);">📱</div>
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: flex-start; justify-content: space-between;">
+                <div class="policy-card__title">Work From Home Policy</div>
+                <span class="badge badge-success no-dot" style="flex-shrink: 0; margin-left: var(--space-3);">Active</span>
+              </div>
+              <div class="policy-card__meta">Version 3.0 · Updated Sep 2026 · Survey in progress</div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="ack-track" style="flex: 1;"><div class="ack-fill" style="width: 55%;"></div></div>
+                <span style="font-size: var(--text-xs); color: var(--color-text-muted); flex-shrink: 0;">55% acknowledged</span>
+              </div>
+              <div class="policy-card__actions">
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Edit</button>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation(); showToast('Reminder sent', 'success')">Send Reminder</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Tab: Acknowledgments -->
+      <div id="tab-acknowledgments" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-bar__filters">
+            <select class="filter-select"><option>All Policies</option><option>Code of Conduct</option><option>POSH Policy</option><option>WFH Policy</option><option>Safety Policy</option></select>
+            <select class="filter-select"><option>All Status</option><option>Acknowledged</option><option>Pending</option><option>Overdue</option></select>
+            <select class="filter-select"><option>All Departments</option><option>Engineering</option><option>Sales</option><option>Operations</option></select>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-left: auto;" onclick="showToast('Sending reminder to all pending employees…', 'success')">Remind All Pending</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Policy</th><th>Version</th><th>Sent On</th><th>Acknowledged On</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">PK</div><div class="table-user__info"><div class="table-user__name">Priya Kumar</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td style="font-size: var(--text-sm);">Code of Conduct</td>
+                <td class="muted">3.1</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 15, 2026</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 16, 2026</td>
+                <td><span class="badge badge-success no-dot">Acknowledged</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div><div class="table-user__info"><div class="table-user__name">Amit Verma</div><div class="table-user__meta">Sales</div></div></div></td>
+                <td style="font-size: var(--text-sm);">POSH Policy</td>
+                <td class="muted">2.0</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td style="color: var(--color-danger-text);">—</td>
+                <td><span class="badge badge-danger no-dot">Overdue</span></td>
+                <td><button class="btn btn-primary btn-sm" onclick="showToast('Reminder sent to Amit Verma', 'success')">Remind</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div><div class="table-user__info"><div class="table-user__name">Rohan Gupta</div><div class="table-user__meta">Engineering</div></div></div></td>
+                <td style="font-size: var(--text-sm);">Workplace Safety</td>
+                <td class="muted">1.5</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 18, 2026</td>
+                <td class="muted">—</td>
+                <td><span class="badge badge-warning no-dot">Pending</span></td>
+                <td><button class="btn btn-ghost btn-sm" onclick="showToast('Reminder sent', 'success')">Remind</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Tasks -->
+      <div id="tab-tasks" class="tab-content">
+        <div style="display: flex; justify-content: flex-end; margin-bottom: var(--space-5);">
+          <button class="btn btn-primary btn-sm" onclick="showToast('Opening task form…', 'info')">Add Task</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Task</th><th>Regulation</th><th>Frequency</th><th>Assigned To</th><th>Due Date</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight: var(--weight-medium);">File TDS returns Q2</td>
+                <td class="muted">Income Tax Act</td>
+                <td class="muted">Quarterly</td>
+                <td class="muted">Finance Team</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px; color: var(--color-danger-text);">Oct 15, 2026</td>
+                <td><span class="badge badge-danger no-dot">Overdue</span></td>
+                <td><button class="btn btn-primary btn-sm" onclick="showToast('Marked complete', 'success')">Complete</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight: var(--weight-medium);">POSH Annual Report</td>
+                <td class="muted">POSH Act</td>
+                <td class="muted">Annual</td>
+                <td class="muted">HR Manager</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 30, 2026</td>
+                <td><span class="badge badge-warning no-dot">In Progress</span></td>
+                <td><button class="btn btn-ghost btn-sm">Update</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight: var(--weight-medium);">PF ECR submission Oct</td>
+                <td class="muted">Employees' PF Act</td>
+                <td class="muted">Monthly</td>
+                <td class="muted">Payroll</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 25, 2026</td>
+                <td><span class="badge badge-accent no-dot">Upcoming</span></td>
+                <td><button class="btn btn-ghost btn-sm">Start</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight: var(--weight-medium);">Form 5A — Annual Return ESI</td>
+                <td class="muted">ESI Act</td>
+                <td class="muted">Annual</td>
+                <td class="muted">HR / Legal</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 11, 2026</td>
+                <td><span class="badge badge-neutral no-dot">Not Started</span></td>
+                <td><button class="btn btn-ghost btn-sm">Start</button></td>
+              </tr>
+              <tr>
+                <td style="font-weight: var(--weight-medium);">Annual appraisal disclosure</td>
+                <td class="muted">Company Policy</td>
+                <td class="muted">Annual</td>
+                <td class="muted">HR Manager</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Dec 31, 2026</td>
+                <td><span class="badge badge-success no-dot">On Track</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- New Policy Modal -->
+<div class="modal-overlay" id="policy-modal" style="display:none" onclick="closePolicyModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div><div class="modal-header__title">New Policy</div><div class="modal-header__desc">Create or upload a new HR policy</div></div>
+      <button class="modal-close" onclick="closePolicyModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        <div class="form-group"><label class="form-label required">Policy Title</label><input type="text" class="input" placeholder="e.g. Anti-Bribery Policy"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+          <div class="form-group"><label class="form-label">Category</label><select class="select"><option>HR Policy</option><option>Code of Conduct</option><option>IT Security</option><option>Safety</option><option>Statutory</option></select></div>
+          <div class="form-group"><label class="form-label">Version</label><input type="text" class="input" value="1.0"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Effective Date</label><input type="date" class="input" value="2026-11-01"></div>
+        <div class="form-group"><label class="form-label">Requires Employee Acknowledgment</label><select class="select"><option>Yes</option><option>No</option></select></div>
+        <div class="form-group"><label class="form-label">Document (PDF)</label><input type="file" class="input" style="height: auto; padding-top: 6px; padding-bottom: 6px;"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePolicyModal()">Cancel</button>
+      <button class="btn btn-secondary" onclick="savePolicyDraft()">Save Draft</button>
+      <button class="btn btn-primary" onclick="savePolicy()">Publish Policy</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="../theme.js"></script>
+<script>
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+  function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('mobile-open'); document.getElementById('mobile-overlay').classList.toggle('active'); }
+  function openPolicyModal() { document.getElementById('policy-modal').style.display = 'flex'; }
+  function closePolicyModal(e) { if (!e || e.target === document.getElementById('policy-modal')) document.getElementById('policy-modal').style.display = 'none'; }
+  function savePolicyDraft() { document.getElementById('policy-modal').style.display = 'none'; showToast('Policy saved as draft', 'info'); }
+  function savePolicy() { document.getElementById('policy-modal').style.display = 'none'; showToast('Policy published successfully', 'success'); }
+  function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast__dot"></div><span class="toast__message">${message}</span><button class="toast__close" onclick="this.parentElement.remove()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePolicyModal(); });
+</script>
+</body>
+</html>

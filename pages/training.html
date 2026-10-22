@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — Training &amp; Development</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Course card */
+    .course-card {
+      background: var(--color-bg-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      transition: border-color var(--duration-fast);
+      cursor: pointer;
+    }
+    .course-card:hover { border-color: var(--color-border-strong); }
+
+    .course-card__thumb {
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .course-card__body { padding: var(--space-5); }
+    .course-card__title {
+      font-size: var(--text-sm);
+      font-weight: var(--weight-semibold);
+      color: var(--color-text-primary);
+      line-height: var(--leading-snug);
+    }
+    .course-card__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      margin-top: var(--space-3);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    /* Progress bar */
+    .prog-track {
+      height: 4px;
+      background: var(--color-bg-overlay-2);
+      border-radius: var(--radius-full);
+      margin-top: var(--space-3);
+      overflow: hidden;
+    }
+    .prog-fill {
+      height: 100%;
+      background: var(--color-accent);
+      border-radius: var(--radius-full);
+    }
+
+    /* Cert badge */
+    .cert-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* Mobile */
+    .mobile-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: calc(var(--z-modal) - 1);
+      backdrop-filter: blur(2px);
+    }
+    .mobile-overlay.active { display: block; }
+    .mobile-menu-btn {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    @media (max-width: 768px) {
+      .app-sidebar { transform: translateX(-100%); transition: transform var(--duration-slow) var(--ease-out); z-index: var(--z-modal); }
+      .app-sidebar.mobile-open { transform: translateX(0); }
+      .app-sidebar.collapsed { width: var(--sidebar-width); }
+      .app-main { margin-left: 0 !important; }
+      .mobile-menu-btn { display: flex; }
+      .topbar-search { display: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+      .page-header { flex-wrap: wrap; }
+      .page-header__actions { width: 100%; }
+      .course-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    @media (max-width: 480px) {
+      .app-content { padding: var(--space-5); }
+      .stats-row { grid-template-columns: 1fr !important; }
+      .course-grid { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileSidebar()"></div>
+<div class="app-shell">
+
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__logo">H</div>
+      <span class="sidebar-brand__name">PeopleOS</span>
+      <span class="sidebar-brand__badge">HRMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Main</div>
+        <a class="nav-item" href="dashboard.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="nav-item__label">Dashboard</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Workforce</div>
+        <a class="nav-item" href="employees.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-item__label">Employees</span></a>
+        <a class="nav-item" href="attendance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="nav-item__label">Attendance</span></a>
+        <a class="nav-item" href="leave.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-item__label">Leave</span></a>
+        <a class="nav-item" href="performance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg><span class="nav-item__label">Performance</span></a>
+        <a class="nav-item active" href="training.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="nav-item__label">Training</span></a>
+        <a class="nav-item" href="engagement.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="nav-item__label">Engagement</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Hiring</div>
+        <a class="nav-item" href="recruitment.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg><span class="nav-item__label">Recruitment</span></a>
+        <a class="nav-item" href="onboarding.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span class="nav-item__label">Onboarding</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Finance</div>
+        <a class="nav-item" href="payroll.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="nav-item__label">Payroll</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">HR Ops</div>
+        <a class="nav-item" href="assets.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><span class="nav-item__label">Assets</span></a>
+        <a class="nav-item" href="promotions.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg><span class="nav-item__label">Promotions</span></a>
+        <a class="nav-item" href="disciplinary.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-item__label">Disciplinary</span></a>
+        <a class="nav-item" href="helpdesk.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-item__label">Helpdesk</span></a>
+        <a class="nav-item" href="compliance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="nav-item__label">Compliance</span></a>
+        <a class="nav-item" href="offboarding.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="nav-item__label">Offboarding</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Config</div>
+        <a class="nav-item" href="analytics.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="nav-item__label">Analytics</span></a>
+        <a class="nav-item" href="settings.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M12 2a10 10 0 0 1 0 20"/></svg><span class="nav-item__label">Settings</span></a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer__avatar">RJ</div>
+      <div class="sidebar-footer__info">
+        <div class="sidebar-footer__name">Rajat Joshi</div>
+        <div class="sidebar-footer__role">HR Manager</div>
+      </div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-breadcrumb">
+        <a href="dashboard.html" class="topbar-breadcrumb__item">PeopleOS</a>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__current">Training &amp; Development</span>
+      </div>
+      <div class="topbar-search">
+        <span class="topbar-search__icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input type="text" placeholder="Search courses or employees…">
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-action-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <div class="app-content">
+      <div class="page-header">
+        <div class="page-header__text">
+          <h1>Training &amp; Development</h1>
+          <p>Manage courses, enrollments, assessments, and certifications.</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="btn btn-secondary btn-sm">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openCourseModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add Course
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Courses Available</div>
+            <div class="stat-card__icon" style="background: var(--color-accent-soft); color: var(--color-accent);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">48</div>
+          <div class="stat-card__trend neutral">12 added this month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Enrollments</div>
+            <div class="stat-card__icon" style="background: var(--color-info-soft); color: var(--color-info);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">124</div>
+          <div class="stat-card__trend neutral">This month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Completion Rate</div>
+            <div class="stat-card__icon" style="background: var(--color-success-soft); color: var(--color-success);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">71%</div>
+          <div class="stat-card__trend neutral">+5% vs last month</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Certs Expiring</div>
+            <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">7</div>
+          <div class="stat-card__trend neutral">In next 30 days</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'courses')">Courses <span class="tab__count">48</span></div>
+        <div class="tab" onclick="switchTab(this,'assignments')">Assignments</div>
+        <div class="tab" onclick="switchTab(this,'assessments')">Assessments</div>
+        <div class="tab" onclick="switchTab(this,'certifications')">Certifications <span class="tab__count">7</span></div>
+      </div>
+
+      <!-- Tab: Courses -->
+      <div id="tab-courses" class="tab-content active">
+        <div class="filter-bar">
+          <div class="filter-bar__search">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" placeholder="Search courses…">
+          </div>
+          <div class="filter-bar__filters">
+            <select class="filter-select"><option>All Categories</option><option>Technical</option><option>Leadership</option><option>Compliance</option><option>Soft Skills</option></select>
+            <select class="filter-select"><option>All Formats</option><option>Online</option><option>Classroom</option><option>Blended</option></select>
+          </div>
+        </div>
+
+        <div class="course-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-5);">
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-accent-soft), transparent);">🚀</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Leadership Foundations</div>
+              <div class="course-card__meta">
+                <span>8h 30m</span>
+                <span>•</span>
+                <span>34 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 0%;"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-accent no-dot">Leadership</span>
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Enroll</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-success-soft), transparent);">🛡️</div>
+            <div class="course-card__body">
+              <div class="course-card__title">POSH Act &amp; Prevention of Harassment</div>
+              <div class="course-card__meta">
+                <span>2h 00m</span>
+                <span>•</span>
+                <span>241 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 60%; background: var(--color-success);"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-success no-dot">Compliance</span>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Continue</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-info-soft), transparent);">💻</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Advanced Excel for HR Analytics</div>
+              <div class="course-card__meta">
+                <span>6h 15m</span>
+                <span>•</span>
+                <span>18 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 0%;"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-neutral no-dot">Technical</span>
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Enroll</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-warning-soft), transparent);">🎯</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Effective Communication Skills</div>
+              <div class="course-card__meta">
+                <span>4h 00m</span>
+                <span>•</span>
+                <span>67 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 100%; background: var(--color-success);"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-warning no-dot">Soft Skills</span>
+                <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation()">Completed</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, rgba(99,102,241,0.15), transparent);">📊</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Data-Driven Decision Making</div>
+              <div class="course-card__meta">
+                <span>5h 45m</span>
+                <span>•</span>
+                <span>29 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 35%;"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-accent no-dot">Leadership</span>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Continue</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-danger-soft), transparent);">⚠️</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Fire Safety &amp; Emergency Response</div>
+              <div class="course-card__meta">
+                <span>1h 30m</span>
+                <span>•</span>
+                <span>284 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 88%; background: var(--color-warning);"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-success no-dot">Compliance</span>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Continue</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-success-soft), transparent);">🤝</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Team Management Essentials</div>
+              <div class="course-card__meta">
+                <span>7h 00m</span>
+                <span>•</span>
+                <span>12 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 0%;"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-accent no-dot">Leadership</span>
+                <button class="btn btn-primary btn-sm" onclick="event.stopPropagation()">Enroll</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="course-card" onclick="showToast('Opening course…', 'info')">
+            <div class="course-card__thumb" style="background: linear-gradient(135deg, var(--color-info-soft), transparent);">🔐</div>
+            <div class="course-card__body">
+              <div class="course-card__title">Information Security Basics</div>
+              <div class="course-card__meta">
+                <span>3h 00m</span>
+                <span>•</span>
+                <span>156 enrolled</span>
+              </div>
+              <div class="prog-track"><div class="prog-fill" style="width: 50%; background: var(--color-warning);"></div></div>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: var(--space-4);">
+                <span class="badge badge-success no-dot">Compliance</span>
+                <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation()">Continue</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Assignments -->
+      <div id="tab-assignments" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-bar__filters">
+            <select class="filter-select"><option>All Employees</option><option>Engineering</option><option>Sales</option></select>
+            <select class="filter-select"><option>All Status</option><option>Assigned</option><option>In Progress</option><option>Completed</option><option>Overdue</option></select>
+          </div>
+          <button class="btn btn-primary btn-sm" style="margin-left: auto;" onclick="showToast('Opening assignment form…', 'info')">Assign Course</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Course</th><th>Assigned By</th><th>Due Date</th><th>Progress</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">PK</div><div class="table-user__info"><div class="table-user__name">Priya Kumar</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td style="font-size: var(--text-sm);">Leadership Foundations</td>
+                <td class="muted">HR Team</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 15, 2026</td>
+                <td><div style="display: flex; align-items: center; gap: var(--space-3);"><div class="prog-track" style="width: 80px;"><div class="prog-fill" style="width: 45%;"></div></div><span style="font-size: var(--text-xs); color: var(--color-text-muted);">45%</span></div></td>
+                <td><span class="badge badge-accent no-dot">In Progress</span></td>
+                <td><button class="btn btn-ghost btn-sm">Remind</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-warning-soft); color: var(--color-warning-text);">AV</div><div class="table-user__info"><div class="table-user__name">Amit Verma</div><div class="table-user__meta">Sales</div></div></div></td>
+                <td style="font-size: var(--text-sm);">POSH Act &amp; Prevention</td>
+                <td class="muted">Mandatory</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px; color: var(--color-danger-text);">Oct 15, 2026</td>
+                <td><div style="display: flex; align-items: center; gap: var(--space-3);"><div class="prog-track" style="width: 80px;"><div class="prog-fill" style="width: 0%;"></div></div><span style="font-size: var(--text-xs); color: var(--color-text-muted);">0%</span></div></td>
+                <td><span class="badge badge-danger no-dot">Overdue</span></td>
+                <td><button class="btn btn-primary btn-sm">Remind</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div><div class="table-user__info"><div class="table-user__name">Rohan Gupta</div><div class="table-user__meta">Engineering</div></div></div></td>
+                <td style="font-size: var(--text-sm);">Information Security Basics</td>
+                <td class="muted">Manager</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 30, 2026</td>
+                <td><div style="display: flex; align-items: center; gap: var(--space-3);"><div class="prog-track" style="width: 80px;"><div class="prog-fill" style="width: 100%; background: var(--color-success);"></div></div><span style="font-size: var(--text-xs); color: var(--color-success-text);">100%</span></div></td>
+                <td><span class="badge badge-success no-dot">Completed</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Assessments -->
+      <div id="tab-assessments" class="tab-content">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Assessment</th><th>Course</th><th>Employee</th><th>Score</th><th>Attempts</th><th>Passed</th><th>Date</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-size: var(--text-sm); font-weight: var(--weight-medium);">POSH Compliance Test</td>
+                <td class="muted">POSH Act &amp; Prevention</td>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div><div class="table-user__info"><div class="table-user__name">Rohan Gupta</div></div></div></td>
+                <td><span style="color: var(--color-success-text); font-weight: var(--weight-semibold);">88%</span></td>
+                <td class="muted">1</td>
+                <td><span class="badge badge-success no-dot">Yes</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 18, 2026</td>
+              </tr>
+              <tr>
+                <td style="font-size: var(--text-sm); font-weight: var(--weight-medium);">Fire Safety Quiz</td>
+                <td class="muted">Fire Safety &amp; Emergency</td>
+                <td><div class="table-user"><div class="avatar avatar-sm">KN</div><div class="table-user__info"><div class="table-user__name">Kavya Nair</div></div></div></td>
+                <td><span style="color: var(--color-danger-text); font-weight: var(--weight-semibold);">54%</span></td>
+                <td class="muted">2</td>
+                <td><span class="badge badge-danger no-dot">No</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 20, 2026</td>
+              </tr>
+              <tr>
+                <td style="font-size: var(--text-sm); font-weight: var(--weight-medium);">Communication Skills Assessment</td>
+                <td class="muted">Effective Communication</td>
+                <td><div class="table-user"><div class="avatar avatar-sm">PK</div><div class="table-user__info"><div class="table-user__name">Priya Kumar</div></div></div></td>
+                <td><span style="color: var(--color-success-text); font-weight: var(--weight-semibold);">92%</span></td>
+                <td class="muted">1</td>
+                <td><span class="badge badge-success no-dot">Yes</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 12, 2026</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Certifications -->
+      <div id="tab-certifications" class="tab-content">
+        <div style="display: flex; flex-direction: column; gap: var(--space-3);">
+          <div style="padding: var(--space-4) var(--space-5); background: var(--color-warning-soft); border: 1px solid var(--color-warning); border-radius: var(--radius-md); font-size: var(--text-xs); color: var(--color-warning-text); display: flex; align-items: center; gap: var(--space-3);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            7 certifications expiring in the next 30 days. Send renewal reminders to affected employees.
+          </div>
+        </div>
+        <div class="table-wrapper" style="margin-top: var(--space-5);">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Certification</th><th>Issued By</th><th>Issue Date</th><th>Expiry</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">PK</div><div class="table-user__info"><div class="table-user__name">Priya Kumar</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td style="font-size: var(--text-sm); font-weight: var(--weight-medium);">Effective Communication</td>
+                <td class="muted">PeopleOS LMS</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 12, 2026</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 12, 2028</td>
+                <td><span class="badge badge-success no-dot">Valid</span></td>
+                <td><button class="btn btn-ghost btn-sm">Download</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div><div class="table-user__info"><div class="table-user__name">Rohan Gupta</div><div class="table-user__meta">Engineering</div></div></div></td>
+                <td style="font-size: var(--text-sm); font-weight: var(--weight-medium);">POSH Compliance</td>
+                <td class="muted">PeopleOS LMS</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 18, 2026</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px; color: var(--color-warning-text);">Nov 05, 2026</td>
+                <td><span class="badge badge-warning no-dot">Expiring</span></td>
+                <td><button class="btn btn-primary btn-sm">Remind</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Add Course Modal -->
+<div class="modal-overlay" id="course-modal" style="display:none" onclick="closeCourseModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div><div class="modal-header__title">Add Course</div><div class="modal-header__desc">Create a new training course</div></div>
+      <button class="modal-close" onclick="closeCourseModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        <div class="form-group"><label class="form-label required">Course Title</label><input type="text" class="input" placeholder="e.g. Project Management Basics"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+          <div class="form-group"><label class="form-label required">Category</label><select class="select"><option>Technical</option><option>Leadership</option><option>Compliance</option><option>Soft Skills</option></select></div>
+          <div class="form-group"><label class="form-label required">Format</label><select class="select"><option>Online</option><option>Classroom</option><option>Blended</option></select></div>
+        </div>
+        <div class="form-group"><label class="form-label">Duration</label><input type="text" class="input" placeholder="e.g. 4h 30m"></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="textarea" placeholder="Brief description of learning objectives…"></textarea></div>
+        <div class="form-group"><label class="form-label">Mandatory For</label><select class="select"><option>Optional</option><option>All Employees</option><option>Engineering</option><option>Sales</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeCourseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCourse()">Save Course</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="../theme.js"></script>
+<script>
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+  function toggleMobileSidebar() {
+    document.getElementById('sidebar').classList.toggle('mobile-open');
+    document.getElementById('mobile-overlay').classList.toggle('active');
+  }
+  function openCourseModal() { document.getElementById('course-modal').style.display = 'flex'; }
+  function closeCourseModal(e) {
+    if (!e || e.target === document.getElementById('course-modal')) document.getElementById('course-modal').style.display = 'none';
+  }
+  function saveCourse() { document.getElementById('course-modal').style.display = 'none'; showToast('Course created successfully', 'success'); }
+  function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast__dot"></div><span class="toast__message">${message}</span><button class="toast__close" onclick="this.parentElement.remove()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeCourseModal(); });
+</script>
+</body>
+</html>

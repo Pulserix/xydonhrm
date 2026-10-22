@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HRMS — Promotions &amp; Transfers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../design-system/tokens.css">
+  <link rel="stylesheet" href="../design-system/utilities.css">
+  <link rel="stylesheet" href="../design-system/components.css">
+  <style>
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* Change arrow */
+    .change-arrow {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      font-size: var(--text-sm);
+    }
+    .change-arrow__from { color: var(--color-text-muted); }
+    .change-arrow__sep { color: var(--color-text-muted); }
+    .change-arrow__to { color: var(--color-text-primary); font-weight: var(--weight-medium); }
+
+    /* Mobile */
+    .mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: calc(var(--z-modal) - 1); backdrop-filter: blur(2px); }
+    .mobile-overlay.active { display: block; }
+    .mobile-menu-btn { display: none; align-items: center; justify-content: center; width: 32px; height: 32px; background: none; border: 1px solid var(--color-border); border-radius: var(--radius-md); color: var(--color-text-secondary); cursor: pointer; flex-shrink: 0; }
+    @media (max-width: 768px) {
+      .app-sidebar { transform: translateX(-100%); transition: transform var(--duration-slow) var(--ease-out); z-index: var(--z-modal); }
+      .app-sidebar.mobile-open { transform: translateX(0); }
+      .app-sidebar.collapsed { width: var(--sidebar-width); }
+      .app-main { margin-left: 0 !important; }
+      .mobile-menu-btn { display: flex; }
+      .topbar-search { display: none; }
+      .stats-row { grid-template-columns: repeat(2, 1fr) !important; }
+      .page-header { flex-wrap: wrap; }
+      .page-header__actions { width: 100%; }
+    }
+    @media (max-width: 480px) {
+      .app-content { padding: var(--space-5); }
+      .stats-row { grid-template-columns: 1fr !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="mobile-overlay" id="mobile-overlay" onclick="toggleMobileSidebar()"></div>
+<div class="app-shell">
+
+  <aside class="app-sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="sidebar-brand__logo">H</div>
+      <span class="sidebar-brand__name">PeopleOS</span>
+      <span class="sidebar-brand__badge">HRMS</span>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Main</div>
+        <a class="nav-item" href="dashboard.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span class="nav-item__label">Dashboard</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Workforce</div>
+        <a class="nav-item" href="employees.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-item__label">Employees</span></a>
+        <a class="nav-item" href="attendance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span class="nav-item__label">Attendance</span></a>
+        <a class="nav-item" href="leave.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span class="nav-item__label">Leave</span></a>
+        <a class="nav-item" href="performance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg><span class="nav-item__label">Performance</span></a>
+        <a class="nav-item" href="training.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><span class="nav-item__label">Training</span></a>
+        <a class="nav-item" href="engagement.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span class="nav-item__label">Engagement</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Hiring</div>
+        <a class="nav-item" href="recruitment.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg><span class="nav-item__label">Recruitment</span></a>
+        <a class="nav-item" href="onboarding.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg><span class="nav-item__label">Onboarding</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Finance</div>
+        <a class="nav-item" href="payroll.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="nav-item__label">Payroll</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">HR Ops</div>
+        <a class="nav-item" href="assets.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg><span class="nav-item__label">Assets</span></a>
+        <a class="nav-item active" href="promotions.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 11 12 6 7 11"/><polyline points="17 18 12 13 7 18"/></svg><span class="nav-item__label">Promotions</span></a>
+        <a class="nav-item" href="disciplinary.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span class="nav-item__label">Disciplinary</span></a>
+        <a class="nav-item" href="helpdesk.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="nav-item__label">Helpdesk</span></a>
+        <a class="nav-item" href="compliance.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><span class="nav-item__label">Compliance</span></a>
+        <a class="nav-item" href="offboarding.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg><span class="nav-item__label">Offboarding</span></a>
+      </div>
+      <div class="sidebar-nav__group">
+        <div class="sidebar-nav__group-label">Config</div>
+        <a class="nav-item" href="analytics.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span class="nav-item__label">Analytics</span></a>
+        <a class="nav-item" href="settings.html"><svg class="nav-item__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M12 2a10 10 0 0 1 0 20"/></svg><span class="nav-item__label">Settings</span></a>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="sidebar-footer__avatar">RJ</div>
+      <div class="sidebar-footer__info"><div class="sidebar-footer__name">Rajat Joshi</div><div class="sidebar-footer__role">HR Manager</div></div>
+      <button class="sidebar-toggle" onclick="toggleSidebar()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+    </div>
+  </aside>
+
+  <div class="app-main">
+    <header class="app-topbar">
+      <button class="mobile-menu-btn" onclick="toggleMobileSidebar()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+      <div class="topbar-breadcrumb">
+        <a href="dashboard.html" class="topbar-breadcrumb__item">PeopleOS</a>
+        <span class="topbar-breadcrumb__sep">/</span>
+        <span class="topbar-breadcrumb__current">Promotions &amp; Transfers</span>
+      </div>
+      <div class="topbar-search">
+        <span class="topbar-search__icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input type="text" placeholder="Search employees…">
+      </div>
+      <div class="topbar-actions">
+        <button class="topbar-action-btn"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="notif-dot"></span></button>
+      </div>
+    </header>
+
+    <div class="app-content">
+      <div class="page-header">
+        <div class="page-header__text">
+          <h1>Promotions, Transfers &amp; Employment Changes</h1>
+          <p>Manage promotions, lateral transfers, and compensation revisions.</p>
+        </div>
+        <div class="page-header__actions">
+          <button class="btn btn-secondary btn-sm" onclick="showToast('Exporting change log…', 'info')">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openChangeModal()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Change Request
+          </button>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-6); margin-bottom: var(--space-8);">
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Pending Changes</div>
+            <div class="stat-card__icon" style="background: var(--color-warning-soft); color: var(--color-warning);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">7</div>
+          <div class="stat-card__trend neutral">Awaiting approval</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Effective This Month</div>
+            <div class="stat-card__icon" style="background: var(--color-success-soft); color: var(--color-success);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">12</div>
+          <div class="stat-card__trend neutral">Letters generated</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Transfers</div>
+            <div class="stat-card__icon" style="background: var(--color-info-soft); color: var(--color-info);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">4</div>
+          <div class="stat-card__trend neutral">Cross-department</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card__header">
+            <div class="stat-card__label">Revisions</div>
+            <div class="stat-card__icon" style="background: var(--color-accent-soft); color: var(--color-accent);">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+          <div class="stat-card__value">3</div>
+          <div class="stat-card__trend neutral">Compensation updates</div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab(this,'pending')">Pending Approval <span class="tab__count">7</span></div>
+        <div class="tab" onclick="switchTab(this,'promotions')">Promotions</div>
+        <div class="tab" onclick="switchTab(this,'transfers')">Transfers</div>
+        <div class="tab" onclick="switchTab(this,'compensation')">Compensation</div>
+        <div class="tab" onclick="switchTab(this,'history')">History</div>
+      </div>
+
+      <!-- Tab: Pending -->
+      <div id="tab-pending" class="tab-content active">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Change Type</th><th>Current → New</th><th>Effective Date</th><th>Requested By</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">PK</div><div class="table-user__info"><div class="table-user__name">Priya Kumar</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td><span class="badge badge-success no-dot">Promotion</span></td>
+                <td>
+                  <div class="change-arrow">
+                    <span class="change-arrow__from">Senior Manager</span>
+                    <span class="change-arrow__sep">→</span>
+                    <span class="change-arrow__to">Director, Operations</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 01, 2026</td>
+                <td class="muted">CEO</td>
+                <td><span class="badge badge-warning no-dot">HR Approval</span></td>
+                <td>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-success btn-sm" onclick="showToast('Promotion approved. Letter queued.', 'success')">Approve</button>
+                    <button class="btn btn-ghost btn-sm" onclick="showToast('Change rejected', 'error')">Reject</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div><div class="table-user__info"><div class="table-user__name">Rohan Gupta</div><div class="table-user__meta">Engineering</div></div></div></td>
+                <td><span class="badge badge-info no-dot">Transfer</span></td>
+                <td>
+                  <div class="change-arrow">
+                    <span class="change-arrow__from">Engineering · Bangalore</span>
+                    <span class="change-arrow__sep">→</span>
+                    <span class="change-arrow__to">Product · Mumbai</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 15, 2026</td>
+                <td class="muted">VP Engineering</td>
+                <td><span class="badge badge-warning no-dot">HR Approval</span></td>
+                <td>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-success btn-sm" onclick="showToast('Transfer approved', 'success')">Approve</button>
+                    <button class="btn btn-ghost btn-sm">Reject</button>
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">KN</div><div class="table-user__info"><div class="table-user__name">Kavya Nair</div><div class="table-user__meta">Sales</div></div></div></td>
+                <td><span class="badge badge-accent no-dot">Compensation</span></td>
+                <td>
+                  <div class="change-arrow">
+                    <span class="change-arrow__from">₹8.4L CTC</span>
+                    <span class="change-arrow__sep">→</span>
+                    <span class="change-arrow__to">₹10.2L CTC (+21.4%)</span>
+                  </div>
+                </td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td class="muted">Sales Head</td>
+                <td><span class="badge badge-success no-dot">Approved</span></td>
+                <td>
+                  <div style="display: flex; gap: var(--space-2);">
+                    <button class="btn btn-secondary btn-sm" onclick="showToast('Letter generated', 'success')">Generate Letter</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Promotions -->
+      <div id="tab-promotions" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-bar__filters">
+            <select class="filter-select"><option>All Departments</option><option>Engineering</option><option>Sales</option><option>Operations</option></select>
+            <select class="filter-select"><option>All Status</option><option>Pending</option><option>Approved</option><option>Effective</option></select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>From Designation</th><th>To Designation</th><th>Effective Date</th><th>Salary Change</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">PK</div><div class="table-user__info"><div class="table-user__name">Priya Kumar</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td class="muted">Senior Manager</td>
+                <td style="font-weight: var(--weight-medium);">Director, Operations</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 01, 2026</td>
+                <td><span style="color: var(--color-success-text); font-weight: var(--weight-semibold);">+28%</span></td>
+                <td><span class="badge badge-warning no-dot">Pending HR</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-success-soft); color: var(--color-success-text);">NS</div><div class="table-user__info"><div class="table-user__name">Neha Singh</div><div class="table-user__meta">Product</div></div></div></td>
+                <td class="muted">Product Manager</td>
+                <td style="font-weight: var(--weight-medium);">Senior Product Manager</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td><span style="color: var(--color-success-text); font-weight: var(--weight-semibold);">+18%</span></td>
+                <td><span class="badge badge-success no-dot">Effective</span></td>
+                <td><button class="btn btn-ghost btn-sm">Letter</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Transfers -->
+      <div id="tab-transfers" class="tab-content">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>From</th><th>To</th><th>Effective Date</th><th>Reason</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-info-soft); color: var(--color-info-text);">RG</div><div class="table-user__info"><div class="table-user__name">Rohan Gupta</div><div class="table-user__meta">Engineering</div></div></div></td>
+                <td><div style="font-size: var(--text-xs);"><div>Engineering</div><div style="color: var(--color-text-muted);">Bangalore</div></div></td>
+                <td><div style="font-size: var(--text-xs);"><div style="font-weight: var(--weight-medium);">Product</div><div style="color: var(--color-text-muted);">Mumbai</div></div></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Nov 15, 2026</td>
+                <td class="muted">Business need</td>
+                <td><span class="badge badge-warning no-dot">Pending HR</span></td>
+                <td><button class="btn btn-ghost btn-sm">View</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">DP</div><div class="table-user__info"><div class="table-user__name">Deepa Pillai</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td><div style="font-size: var(--text-xs);"><div>Operations · Pune</div></div></td>
+                <td><div style="font-size: var(--text-xs);"><div style="font-weight: var(--weight-medium);">Operations · Chennai</div></div></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td class="muted">Personal request</td>
+                <td><span class="badge badge-success no-dot">Effective</span></td>
+                <td><button class="btn btn-ghost btn-sm">Letter</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: Compensation -->
+      <div id="tab-compensation" class="tab-content">
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Previous CTC</th><th>New CTC</th><th>Hike %</th><th>Effective</th><th>Reason</th><th>Status</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">KN</div><div class="table-user__info"><div class="table-user__name">Kavya Nair</div><div class="table-user__meta">Sales</div></div></div></td>
+                <td class="muted">₹8.4L</td>
+                <td style="font-weight: var(--weight-semibold); color: var(--color-success-text);">₹10.2L</td>
+                <td><span style="color: var(--color-success-text); font-weight: var(--weight-semibold);">+21.4%</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td class="muted">Performance review</td>
+                <td><span class="badge badge-success no-dot">Approved</span></td>
+                <td><button class="btn btn-ghost btn-sm">Letter</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-success-soft); color: var(--color-success-text);">NS</div><div class="table-user__info"><div class="table-user__name">Neha Singh</div><div class="table-user__meta">Product</div></div></div></td>
+                <td class="muted">₹14.5L</td>
+                <td style="font-weight: var(--weight-semibold); color: var(--color-success-text);">₹17.1L</td>
+                <td><span style="color: var(--color-success-text); font-weight: var(--weight-semibold);">+18%</span></td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td class="muted">Promotion</td>
+                <td><span class="badge badge-success no-dot">Effective</span></td>
+                <td><button class="btn btn-ghost btn-sm">Letter</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Tab: History -->
+      <div id="tab-history" class="tab-content">
+        <div class="filter-bar">
+          <div class="filter-bar__filters">
+            <select class="filter-select"><option>All Types</option><option>Promotion</option><option>Transfer</option><option>Compensation</option><option>Designation Change</option></select>
+            <select class="filter-select"><option>2026</option><option>2025</option><option>2024</option></select>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Change Type</th><th>Details</th><th>Effective Date</th><th>Approved By</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm" style="background: var(--color-success-soft); color: var(--color-success-text);">NS</div><div class="table-user__info"><div class="table-user__name">Neha Singh</div><div class="table-user__meta">Product</div></div></div></td>
+                <td><span class="badge badge-success no-dot">Promotion</span></td>
+                <td class="muted">PM → Sr PM · +18% salary</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td class="muted">Rajat Joshi</td>
+                <td><button class="btn btn-ghost btn-sm">Letter</button></td>
+              </tr>
+              <tr>
+                <td><div class="table-user"><div class="avatar avatar-sm">DP</div><div class="table-user__info"><div class="table-user__name">Deepa Pillai</div><div class="table-user__meta">Operations</div></div></div></td>
+                <td><span class="badge badge-info no-dot">Transfer</span></td>
+                <td class="muted">Pune → Chennai</td>
+                <td class="muted" style="font-family: var(--font-mono); font-size: 12px;">Oct 01, 2026</td>
+                <td class="muted">Rajat Joshi</td>
+                <td><button class="btn btn-ghost btn-sm">Letter</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- New Change Request Modal -->
+<div class="modal-overlay" id="change-modal" style="display:none" onclick="closeChangeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <div><div class="modal-header__title">New Employment Change</div><div class="modal-header__desc">Request a promotion, transfer, or compensation revision</div></div>
+      <button class="modal-close" onclick="closeChangeModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="display: flex; flex-direction: column; gap: var(--space-5);">
+        <div class="form-group"><label class="form-label required">Employee</label><select class="select"><option>Priya Kumar</option><option>Amit Verma</option><option>Rohan Gupta</option><option>Kavya Nair</option></select></div>
+        <div class="form-group"><label class="form-label required">Change Type</label><select class="select"><option>Promotion</option><option>Transfer</option><option>Compensation Revision</option><option>Designation Change</option></select></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-4);">
+          <div class="form-group"><label class="form-label">From</label><input type="text" class="input" placeholder="Current designation/dept"></div>
+          <div class="form-group"><label class="form-label">To</label><input type="text" class="input" placeholder="New designation/dept"></div>
+        </div>
+        <div class="form-group"><label class="form-label required">Effective Date</label><input type="date" class="input" value="2026-11-01"></div>
+        <div class="form-group"><label class="form-label">Reason / Justification</label><textarea class="textarea" rows="3" placeholder="Reason for this change…"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeChangeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveChange()">Submit for Approval</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<script src="../theme.js"></script>
+<script>
+  function switchTab(el, tabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('tab-' + tabId).classList.add('active');
+  }
+  function toggleSidebar() { document.getElementById('sidebar').classList.toggle('collapsed'); }
+  function toggleMobileSidebar() { document.getElementById('sidebar').classList.toggle('mobile-open'); document.getElementById('mobile-overlay').classList.toggle('active'); }
+  function openChangeModal() { document.getElementById('change-modal').style.display = 'flex'; }
+  function closeChangeModal(e) { if (!e || e.target === document.getElementById('change-modal')) document.getElementById('change-modal').style.display = 'none'; }
+  function saveChange() { document.getElementById('change-modal').style.display = 'none'; showToast('Change request submitted for approval', 'success'); }
+  function showToast(message, type) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `<div class="toast__dot"></div><span class="toast__message">${message}</span><button class="toast__close" onclick="this.parentElement.remove()"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+  }
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closeChangeModal(); });
+</script>
+</body>
+</html>
